@@ -103,6 +103,9 @@
             <label class="shuffle-check">
               <input type="checkbox" id="shuffleChk" checked /> Shuffle
             </label>
+            <label class="shuffle-check">
+              <input type="checkbox" id="weakestChk" /> Weakest first
+            </label>
             <button class="start-btn" id="startBtn" disabled>
               Start studying
             </button>
@@ -162,6 +165,7 @@
                   id="frontImg"
                   alt="Function block schematic"
                 />
+                <div class="hint-text" id="hintText"></div>
                 <div class="flip-hint">Click to reveal answer</div>
               </div>
               <div class="flashcard-face flashcard-back">
@@ -190,6 +194,7 @@
 
         <div class="nav-row">
           <button class="nav-btn" id="prevBtn">‹ Prev</button>
+          <button class="hint-btn" id="hintBtn">💡 Hint</button>
           <button class="flip-btn" id="flipBtn">Flip</button>
           <button class="nav-btn" id="nextBtn">Next ›</button>
         </div>
@@ -221,6 +226,7 @@
     <script src="data/cards.js"></script>
     <script src="data/cards_generated.js"></script>
     <script src="data/cards_blocks.js"></script>
+    <script src="data/cards_mnemonics.js"></script>
     <script src="data/cards_schematics.js"></script>
     <script src="data/cards_manual_images.js"></script>
     <script src="app.js"></script>

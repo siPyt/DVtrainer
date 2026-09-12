@@ -9,14 +9,21 @@
     "all": "All Manuals"
   };
 
-  // Attach a stable id to each card (index-based; dataset order is stable).
-  DV_CARDS.forEach((c, i) => { c.id = "c" + i; });
+  // Stable content-based id so spaced-repetition progress survives dataset changes.
+  function hashId(c) {
+    const s = (c.front || "") + "|" + (c.back || "") + "|" + (c.image || "");
+    let h = 5381;
+    for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+    return "k" + (h >>> 0).toString(36);
+  }
+  DV_CARDS.forEach((c) => { c.id = hashId(c); });
 
   const state = {
     level: null,
     scope: null,
     mode: "flashcards",
     shuffle: true,
+    weakest: false,   // Leitner spaced-repetition: weakest cards first
     deck: [],
     index: 0,
     flipped: false,
@@ -149,12 +156,21 @@
   });
 
   $("#shuffleChk").addEventListener("change", (e) => { state.shuffle = e.target.checked; });
+  $("#weakestChk").addEventListener("change", (e) => { state.weakest = e.target.checked; });
   $("#startBtn").addEventListener("click", startSession);
 
   // ================= SESSION =================
   function buildDeck() {
     let deck = cardsFor(state.level, state.scope);
-    if (state.shuffle) deck = shuffleArr(deck);
+    deck = shuffleArr(deck); // randomize first (interleaving / tie-breaks)
+    if (state.weakest) {
+      // Leitner: lower box (less mastered / unseen) comes first.
+      const key = progressKey();
+      const boxes = (progress[key] && progress[key].boxes) || {};
+      deck.sort((a, b) => (boxes[a.id] || 0) - (boxes[b.id] || 0));
+    } else if (!state.shuffle) {
+      deck = cardsFor(state.level, state.scope); // preserve source order
+    }
     return deck;
   }
 
@@ -214,9 +230,25 @@
   function tagHTML(card) {
     const m = DV_MANUALS[card.manual];
     const lvName = card.level[0].toUpperCase() + card.level.slice(1);
+    const aid = /^(Mnemonics|Memory Aids|Cloze)/.test(card.topic) ? " aid" : "";
     return `<span class="tag manual">${m ? m.short : card.manual}</span>` +
-           `<span class="tag">${card.topic}</span>` +
+           `<span class="tag${aid}">${card.topic}</span>` +
            `<span class="tag level-${card.level}">${lvName}</span>`;
+  }
+
+  // Progressive hint derived from the answer text.
+  function hintFor(card) {
+    const ans = (card.back || "").trim();
+    if (!ans) return "No hint available.";
+    const words = ans.split(/\s+/);
+    if (words.length <= 3) {
+      // short answer: reveal length + first letter of each word
+      return "Answer: " + words.map((w) => w[0] + "\u2009" + "_".repeat(Math.max(1, w.length - 1))).join("  ") +
+             `  (${ans.replace(/\s/g, "").length} chars)`;
+    }
+    // longer answer: reveal the first ~20% as an opening
+    const n = Math.max(4, Math.round(words.length * 0.2));
+    return "Starts with: \u201c" + words.slice(0, n).join(" ") + "\u2026\u201d";
   }
 
   function renderCard() {
@@ -241,6 +273,8 @@
     state.flipped = false;
     fc.classList.remove("flipped");
     $("#quizControls").classList.remove("show");
+    $("#hintText").classList.remove("show");
+    $("#hintText").textContent = "";
 
     $("#frontTags").innerHTML = tagHTML(card);
     $("#backTags").innerHTML = tagHTML(card);
@@ -297,6 +331,14 @@
   });
   $("#flipBtn").addEventListener("click", flip);
 
+  $("#hintBtn").addEventListener("click", () => {
+    const card = currentCard(); if (!card) return;
+    const h = $("#hintText");
+    if (h.classList.contains("show")) { h.classList.remove("show"); return; }
+    h.textContent = "\uD83D\uDCA1 " + hintFor(card);
+    h.classList.add("show");
+  });
+
   function next() {
     if (state.index < state.deck.length - 1) {
       state.index++;
@@ -319,12 +361,19 @@
     state.rated[card.id] = rating;
 
     const key = progressKey();
-    if (!progress[key]) progress[key] = { mastered: [], reviews: 0 };
+    if (!progress[key]) progress[key] = { mastered: [], reviews: 0, boxes: {} };
+    if (!progress[key].boxes) progress[key].boxes = {};
     progress[key].reviews = (progress[key].reviews || 0) + 1;
     const set = new Set(progress[key].mastered);
     if (rating === "good" || rating === "easy") set.add(card.id);
     else set.delete(card.id);
     progress[key].mastered = Array.from(set);
+
+    // Leitner box: again->0, hard->same, good->+1, easy->+2 (cap 5)
+    const boxes = progress[key].boxes;
+    const cur = boxes[card.id] || 0;
+    const delta = { again: -cur, hard: 0, good: 1, easy: 2 }[rating] || 0;
+    boxes[card.id] = Math.max(0, Math.min(5, cur + delta));
     saveProgress(progress);
 
     // "Again" re-queues the card near the end
@@ -371,6 +420,7 @@
     if (e.key === " " || e.key === "Enter") { e.preventDefault(); flip(); }
     else if (e.key === "ArrowRight") next();
     else if (e.key === "ArrowLeft") prev();
+    else if (e.key === "h" || e.key === "H") { $("#hintBtn").click(); }
   });
 
   // ================= INIT =================
