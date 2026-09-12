@@ -1,6 +1,6 @@
 # DV Trainer
 
-A dark-mode study-card web app for learning **Emerson DeltaV** function blocks and system implementation. Pick a difficulty level and a set of source material, then drill flashcards or run a self-test.
+A dark-mode study-card web app for learning **Emerson DeltaV** function blocks and system implementation. Pick a difficulty level and a set of source material, then drill flashcards or run a self-test. Ships with **~1,300 study cards** spanning ~60 function blocks (every parameter), modes/cascade/status behavior, PID, and DeltaV implementation.
 
 > All study-card content is **derived study material** written from a set of DeltaV manuals. The original manuals themselves are copyrighted Emerson training materials and are **not** included in this repository.
 
@@ -8,6 +8,7 @@ A dark-mode study-card web app for learning **Emerson DeltaV** function blocks a
 
 - **Three levels** — Beginner, Intermediate, Expert.
 - **Material scopes** — Function Block manuals, the Implementation course, or All manuals.
+- **Deep parameter coverage** — a card for every parameter of every documented function block, plus “coding with parameters” (fields, references, named sets, option bitstrings, expressions).
 - **Two study modes** — Flashcards (flip to reveal) and Self-Test (rate recall: Again / Hard / Good / Easy).
 - **Progress tracking** — mastered cards are remembered per level/scope in `localStorage`.
 - **Filter & search** — narrow the deck by keyword or topic.
@@ -32,7 +33,8 @@ DV-Trainer/
 ├── styles.css        # dark theme
 ├── app.js            # study/session logic, progress, filters
 ├── data/
-│   └── cards.js       # card dataset (DV_MANUALS + DV_CARDS)
+│   ├── cards.js            # curated card dataset (DV_MANUALS + DV_CARDS)
+│   └── cards_generated.js  # auto-generated per-block parameter cards
 └── make_icons.py      # optional: generate app icons (needs Pillow)
 ```
 

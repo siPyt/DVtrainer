@@ -644,7 +644,179 @@ const DV_CARDS = [
 
   { manual: "impl", topic: "Motor Control", level: "intermediate",
     front: "In the course, how is a motor represented and what block type is typically used?",
-    back: "Motors (e.g., MTR-102, MTR-203) are built as control modules using a Device Control (DC) block, whose setpoint names come from a Named Set (e.g., mtr2-sp with states like Passive/Active). The DC block's SP_D properties let you browse available named sets." }
+    back: "Motors (e.g., MTR-102, MTR-203) are built as control modules using a Device Control (DC) block, whose setpoint names come from a Named Set (e.g., mtr2-sp with states like Passive/Active). The DC block's SP_D properties let you browse available named sets." },
+
+  /* ============================================================
+   * CODING WITH PARAMETERS — PARAMETERS & FIELDS
+   * ============================================================ */
+  { manual: "fbref", topic: "Parameters & Fields", level: "beginner",
+    front: "What is the difference between a parameter and a field in DeltaV?",
+    back: "A parameter is a named, logical grouping of data (such as SP or PV) that exists in a function block. Each individual element of data within the parameter is called a field. For example, a parameter can carry a value (CV) and a status (ST) as separate fields." },
+
+  { manual: "fbref", topic: "Parameters & Fields", level: "intermediate",
+    front: "What do the three access columns (Configurable, Readable, Writeable) mean for a parameter field?",
+    back: "Configurable = can be set in Control Studio or DeltaV Explorer (at configuration). Readable = can be read during runtime. Writeable = the value can be changed during runtime." },
+
+  { manual: "fbref", topic: "Parameters & Fields", level: "intermediate",
+    front: "What field holds the value of a simple floating-point or integer parameter, and can it be written at runtime?",
+    back: "The .CV (Current Value) field. For floating point, integer, Boolean, named set, and option-bitstring parameters, CV is configurable, readable, and writeable at runtime." },
+
+  { manual: "fbref", topic: "Parameters & Fields", level: "intermediate",
+    front: "For a parameter 'with status' (e.g., floating point with status), what are the fields and their access?",
+    back: "CV (the value) — configurable/readable/writeable — and ST (the status) — readable only (not configurable, not writeable). Use the ST field in status-sensitive calculations." },
+
+  { manual: "fbref", topic: "Parameters & Fields", level: "expert",
+    front: "What are the fields of a Mode parameter and which are writeable?",
+    back: "TARGET (configurable, readable, writeable), ACTUAL (configurable, readable — not writeable), NORMAL (readable), PERMITTED (readable), ISAN, and ISTN (read-only). You set a mode by writing to the TARGET field and read the current mode from ACTUAL." },
+
+  { manual: "fbref", topic: "Parameters & Fields", level: "expert",
+    front: "What are the fields of a Scaling parameter (e.g., OUT_SCALE / PV_SCALE)?",
+    back: "EU100 (upper range / 100% value), EU0 (lower range / 0% value), UNITS (engineering units — not writeable at runtime), and DECPT (decimal-point/precision). EU100, EU0, and DECPT are configurable, readable, and writeable." },
+
+  { manual: "fbref", topic: "Parameters & Fields", level: "expert",
+    front: "What are the fields of a Simulate parameter?",
+    back: "ENABLE (turn simulation on/off), SSTATUS (the simulated status), and SVALUE (the simulated value). Simulation lets you drive a block's value/status for testing." },
+
+  { manual: "fbref", topic: "Parameters & Fields", level: "expert",
+    front: "What are the fields of a Named Set parameter?",
+    back: "CV (current value, writeable), CVI (current value integer, read-only), SET (which named set, configurable), CVS (current value string, readable/writeable), and OPSEL (operator-selectable, configurable)." },
+
+  /* ---- REFERENCE PARAMETERS ---- */
+  { manual: "fbref", topic: "Parameter References", level: "intermediate",
+    front: "What is an External Reference parameter and how is it written in an expression?",
+    back: "An external reference lets you refer to any input, output, or parameter available in the DeltaV system (including other modules/nodes). In expressions it is denoted by surrounding the reference in single quotes (' '). Best practice: build the path with the parameter browser to avoid typos and case-sensitivity errors." },
+
+  { manual: "fbref", topic: "Parameter References", level: "intermediate",
+    front: "What does an external-reference path look like, e.g., to the MODE of PID1 in module FIC_501?",
+    back: "The path is Module/Block/PARAM — for example FIC_501/PID1/MODE. A reference named EXT_REF1 pointing there could be used in phase logic as: IF '/EXT_REF1.ACTUAL' = MAN THEN OUT1 := 5.0 END_IF;" },
+
+  { manual: "fbref", topic: "Parameter References", level: "intermediate",
+    front: "What is an Internal Reference parameter, and when does its value update after a write?",
+    back: "An internal reference refers to any input, output, or parameter available in the current module. A write to an internal reference changes the value of the referenced parameter; the internal reference parameter's own value changes at the beginning of the next scan of the module." },
+
+  { manual: "fbref", topic: "Parameter References", level: "expert",
+    front: "What is a Dynamic Reference parameter?",
+    back: "A dynamic reference is a variation of the external reference that lets you define a path to a value selected at run time during algorithm execution — based on information not available at configuration (e.g., an operator entry, a recipe parameter from batch, or a run-time control value)." },
+
+  { manual: "fbref", topic: "Parameter References", level: "expert",
+    front: "When referencing a parameter field other than .CV, what must you do?",
+    back: "You must type the field name explicitly (e.g., .ACTUAL, .ST, .CST). The .CV field is assumed by default; any other field must be named in the expression." },
+
+  { manual: "fbref", topic: "Parameter References", level: "expert",
+    front: "What does the .CST (Connection Status) field tell you, and what do its values mean?",
+    back: "It tells whether a reference has been resolved (value found and readable) — useful when the parameter is in another node. Values: -3 = external reference not resolved; -2 = parameter not configured; -1 = module not configured; 0 = good; 1 = not communicating. It is read-only." },
+
+  { manual: "fbref", topic: "Parameter References", level: "expert",
+    front: "What does the .AWST (Asynchronous Write Status) field report?",
+    back: "Whether the last attempt to write the referenced parameter succeeded. Values: -4 = write rejected; -3 = external reference not resolved; -2 = parameter not configured; -1 = module not configured; 0 = success; 1 = not communicating; 2 = write pending. Read-only." },
+
+  { manual: "fbref", topic: "Parameter References", level: "expert",
+    front: "How do you verify an external reference to another node before relying on it in an SFC?",
+    back: "Use the .CST field in a CALC block or SFC expression. In a confirmation expression test .CST = 0 (connected) or < 0 (never going to connect). For SFC pulse/assignment actions, make sure the reference is bound before continuing the step (via pulse action confirmation or a transition condition)." },
+
+  { manual: "fbref", topic: "Parameter References", level: "expert",
+    front: "What limitation applies to writes to I/O references in another node?",
+    back: "Writes from one node to an I/O reference in another node are NOT supported — and no messages or errors appear to indicate the write was unsuccessful." },
+
+  { manual: "fbref", topic: "Parameter References", level: "expert",
+    front: "What is the .$REF field of a reference parameter?",
+    back: ".$REF provides a means to read the path currently in use by the reference. For an external reference it is configurable; for dynamic/internal references it holds the resolved path. It returns a String." },
+
+  /* ---- EXTENSIBLE PARAMETERS ---- */
+  { manual: "fbref", topic: "Extensible Parameters", level: "intermediate",
+    front: "Which function blocks have extensible parameters?",
+    back: "Add, And, Boolean Fan Input, Boolean Fan Output, Calculation/Logic, Multiply, Multiplex, Or, and Signal Selector. You can increase the number of inputs/outputs so you can wire more values without adding more blocks." },
+
+  { manual: "fbref", topic: "Extensible Parameters", level: "intermediate",
+    front: "How do you extend the inputs on an Add block?",
+    back: "Select the block, right-click, and change the inputs number (e.g., from 2 to 4) in the extensible-parameters dialog. The additional parameters then appear on the diagram to be wired. Blocks can typically extend up to 16 inputs." },
+
+  /* ---- NAMED SETS ---- */
+  { manual: "fbref", topic: "Named Sets", level: "beginner",
+    front: "What is a named set?",
+    back: "A named set is a group of system- or user-defined, mutually exclusive descriptors, each assigned a numeric value from 0 to 255. Each descriptor is a text string representing one number; the operator or engineer selects one item from the list (e.g., for motor states, valve states, module states)." },
+
+  { manual: "fbref", topic: "Named Sets", level: "intermediate",
+    front: "Give the preconfigured two-state motor named set example (mtr2-sp).",
+    back: "mtr2-sp contains STOP = 0 and START = 1. Assigning it to the SP of a motor control block lets an operator choose the motor's state in DeltaV Operate; selecting STOP writes 0 and START writes 1." },
+
+  { manual: "fbref", topic: "Named Sets", level: "intermediate",
+    front: "Are named sets case sensitive, and where are user-defined ones configured?",
+    back: "Yes — named sets are case sensitive; all references to a state must match the original upper/lower case. User-defined named sets are configured in DeltaV Explorer via Setup | Named Set (right-click → New Named Set). States must be configured as user-selectable to be usable in the controller." },
+
+  { manual: "fbref", topic: "Named Sets", level: "expert",
+    front: "Which reserved words must you avoid in user-defined named sets, and why?",
+    back: "Avoid NO(0), YES(1), MAN(8), AUTO(16), CAS(32,48), RCas(64), ROut(128), OOS(1), IMan(2), and LO(4). These are system state names and are always interpreted with those fixed values regardless of any user-defined value." },
+
+  /* ---- OPTION BITSTRINGS ---- */
+  { manual: "fbref", topic: "Option Bitstrings", level: "intermediate",
+    front: "What is an option bitstring parameter, and in which modes can you set one?",
+    back: "It is a parameter containing bit-encoded information where each bit enables an option. You can set control, I/O, and status options only when the block is in Manual or Out of Service mode." },
+
+  { manual: "fbref", topic: "Option Bitstrings", level: "intermediate",
+    front: "Name the types of option bitstrings in DeltaV.",
+    back: "Control Options (CONTROL_OPTS), I/O Options (IO_OPTS), Status Options (STATUS_OPTS), Integration Options, Device Options, Algorithm Options, Input Options, FRSI Add-On Options, plus Interlock and Tracking options. Supported options vary by block." },
+
+  { manual: "fbref", topic: "Option Bitstrings", level: "expert",
+    front: "What does the 'Direct Acting' control option define?",
+    back: "It defines the relationship between a change in PV and the corresponding change in output. When Direct Acting is enabled (True), an increase in PV results in an increase in the output (a decrease in PV decreases the output)." },
+
+  { manual: "fbref", topic: "Option Bitstrings", level: "expert",
+    front: "What does the 'Use PV for BKCAL_OUT' control option do?",
+    back: "Normally BKCAL_OUT contains the working setpoint (SP_WRK). This option makes BKCAL_OUT use the process variable (PV) instead — but only when the block is in Cas mode; in non-Cas modes SP_WRK is still used." },
+
+  { manual: "fbref", topic: "Option Bitstrings", level: "expert",
+    front: "What do the 'Track Enable' and 'Track in Manual' control options do?",
+    back: "Track Enable turns on external tracking: when TRK_IN_D is true (and target mode isn't MAN, or Track In Manual is selected), the block goes to LO and OUT is set to TRK_VAL. Track in Manual specifically permits external tracking when the target mode is MAN." },
+
+  { manual: "fbref", topic: "Option Bitstrings", level: "expert",
+    front: "What does the 'No OUT Limits in Manual' control option do?",
+    back: "It does not apply OUT_HI_LIM or OUT_LO_LIM when target and actual modes are Man. OUT is still limited to no more than 10% outside the range of OUT_SCALE." },
+
+  { manual: "fbref", topic: "Option Bitstrings", level: "expert",
+    front: "What does the I/O option 'Low Cutoff' do?",
+    back: "When the converted input value is below the LOW_CUT limit and Low Cutoff is enabled, a value of 0.0 is used for the converted value (PV). It is useful with zero-based measurement devices such as flowmeters." },
+
+  { manual: "fbref", topic: "Option Bitstrings", level: "expert",
+    front: "What do the I/O options 'Increase to Close' and 'Invert' do?",
+    back: "Increase to Close indicates whether the output value is inverted before being sent to the I/O channel (e.g., for reverse-acting valves). Invert indicates whether a discrete input is logically inverted before being stored in the PV (0 → logical 0; non-zero → logical 1)." },
+
+  { manual: "fbref", topic: "Option Bitstrings", level: "expert",
+    front: "What does the status option 'Propagate Fault Backward' control?",
+    back: "If the actuator status is Bad-Device Failure, Fault State Active, or Local Override, this option propagates it as the corresponding Bad/Good-Cascade substatus to BKCAL_OUT without generating an alarm. It lets you decide whether the block alarms locally or propagates upstream for alarming." },
+
+  { manual: "fbref", topic: "Option Bitstrings", level: "expert",
+    front: "What do the status options 'BAD if Limited' and 'Uncertain if Man mode' do?",
+    back: "BAD if Limited sets the output status to Bad if the sensor is at or beyond a high/low limit. Uncertain if Man mode sets an input/calculation block's output status to Uncertain when the block's actual mode is Man." },
+
+  /* ---- EXPRESSIONS / CODING ---- */
+  { manual: "fbref", topic: "Expressions & Coding", level: "intermediate",
+    front: "What assignment operator is used in DeltaV expressions (CALC/Logic and SFC actions)?",
+    back: "The := operator. For example, OUT1 := 5.0 assigns 5.0 to OUT1. Expressions also support IF-THEN-ELSE-END_IF structures (each IF block terminated with END_IF;)." },
+
+  { manual: "fbref", topic: "Expressions & Coding", level: "expert",
+    front: "What does the Calculation/Logic (CALC) function block let you code?",
+    back: "It evaluates a contained expression using as many as 16 inputs and 16 outputs and supports IF-THEN-ELSE-END_IF structures — letting you write logical and mathematical expressions (including references to other parameters via .CV, .ST, .CST, etc.) inside a module." },
+
+  { manual: "fbref", topic: "Expressions & Coding", level: "expert",
+    front: "Why should you avoid the equals (=) operator when comparing floating-point numbers?",
+    back: "Because floating-point values are stored in finite bits, rounding differences may occur, preventing two 'equal' values from matching. DeltaV uses IEEE single-precision 32-bit floats (~7 significant decimal digits). Use range/inequality comparisons instead of =." },
+
+  { manual: "fbref", topic: "Expressions & Coding", level: "expert",
+    front: "What are the DeltaV floating-point limits and reliable precision?",
+    back: "IEEE single-precision 32-bit: representable magnitude roughly ±3.4E38 (min positive ±2.34E-39). Resolution ≈ 7 significant decimal digits; reliable to about 6 significant digits when converting. Operations exceeding the limit clamp to the limit (e.g., 3.4E38 + 100 = 3.4E38)." },
+
+  { manual: "fbref", topic: "Expressions & Coding", level: "expert",
+    front: "In dynamic-reference expressions, how are string constants vs string variables written?",
+    back: "A string constant is enclosed in double quotation marks (\" \"); a string variable is enclosed in single quotes (' '). Supported string functions include numeric-to-string and string-to-numeric conversion and equal/not-equal string comparison." },
+
+  { manual: "fbref", topic: "Expressions & Coding", level: "intermediate",
+    front: "What is the 'Quick Config' parameter filter group?",
+    back: "Quick Config is a user parameter filter group containing parameters most often used to configure new modules. It has a default parameter list with default values to help configure a module quickly — but you should review each default and change values that aren't correct for your application. Other groups are User-defined 1 and User-defined 2." },
+
+  { manual: "fbref", topic: "Expressions & Coding", level: "intermediate",
+    front: "How do you set a mode from logic or an operator action, and how do you read the current mode?",
+    back: "Write the desired mode to the MODE parameter's TARGET field; read the current operating mode from the ACTUAL field. Only permitted modes can be written to TARGET. In Fieldbus writes, use numeric mode values (e.g., AUTO=16, CAS=48 target)." }
 ];
 
 // Expose for the app
