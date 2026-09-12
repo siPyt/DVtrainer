@@ -16,7 +16,8 @@ const DV_MANUALS = {
   fb2004: { name: "DeltaV Function Block Reference (2004)", short: "FB Ref '04", scope: "function-block" },
   pid:    { name: "DeltaV PID Function Block",              short: "PID",         scope: "function-block" },
   fbref:  { name: "DeltaV Function Block Reference (2005-2008)", short: "FB Ref",  scope: "function-block" },
-  impl:   { name: "DeltaV Implementation I — Using DeltaV Operate (7009)", short: "Impl I", scope: "implementation" }
+  impl:   { name: "DeltaV Implementation I — Using DeltaV Operate (7009)", short: "Impl I", scope: "implementation" },
+  live:   { name: "DeltaV Live Training", short: "Live", scope: "implementation" }
 };
 
 const DV_CARDS = [
@@ -816,7 +817,248 @@ const DV_CARDS = [
 
   { manual: "fbref", topic: "Expressions & Coding", level: "intermediate",
     front: "How do you set a mode from logic or an operator action, and how do you read the current mode?",
-    back: "Write the desired mode to the MODE parameter's TARGET field; read the current operating mode from the ACTUAL field. Only permitted modes can be written to TARGET. In Fieldbus writes, use numeric mode values (e.g., AUTO=16, CAS=48 target)." }
+    back: "Write the desired mode to the MODE parameter's TARGET field; read the current operating mode from the ACTUAL field. Only permitted modes can be written to TARGET. In Fieldbus writes, use numeric mode values (e.g., AUTO=16, CAS=48 target)." },
+
+  /* ============================================================
+   * DELTAV LIVE — OVERVIEW & LIVE vs OPERATE
+   * ============================================================ */
+  { manual: "live", topic: "Live vs Operate", level: "beginner",
+    front: "[Live] What is DeltaV Live and what does it replace?",
+    back: "DeltaV Live is the modern operator graphics environment that REPLACES DeltaV Operate. It exists from DeltaV v14.3 onward; DeltaV Operate is scheduled to become obsolete in version 17.3. Live uses vector displays so you can zoom/rescale without loss of quality." },
+
+  { manual: "live", topic: "Live vs Operate", level: "intermediate",
+    front: "[Live vs Operate] Map the key nomenclature between DeltaV Live and DeltaV Operate.",
+    back: "Live → Operate equivalents: GEM (Graphical Element) → Dynamo; Function → Lookup Table; Standard → Global Variable; Contextual Display → Faceplates/Details/Popup Pictures. Graphics Studio (Live) → Operate Configure/Run." },
+
+  { manual: "live", topic: "Live vs Operate", level: "beginner",
+    front: "[Live] Can DeltaV Live and DeltaV Operate run at the same time?",
+    back: "Yes. They can run side by side on the same station. DeltaV Live can be enabled or disabled on all workstations EXCEPT the ProPlus (ProfessionalPLUS) station. Enabling/disabling is done through Workstation Management." },
+
+  { manual: "live", topic: "Live vs Operate", level: "intermediate",
+    front: "[Live] Name several features built into DeltaV Live that removed the need for scripting in Operate.",
+    back: "Display levels, screen real-estate distribution and assignment, coordinated display navigation, and areas of responsibility per user — all built in. Live also adds class-based GEMs, line connectors/arrows, crossing-lines option, display hierarchy, and themes." },
+
+  /* ---- WORKSTATION MANAGEMENT ---- */
+  { manual: "live", topic: "Live: Workstation Mgmt", level: "intermediate",
+    front: "[Live] What is Workstation Management used for, and where is it launched?",
+    back: "Launched through DeltaV Live Administration, it enables/disables DeltaV Live per workstation (except ProPlus) and assigns layouts, display sets, and themes. It also configures Flexlock settings for DeltaV Live." },
+
+  { manual: "live", topic: "Live: Workstation Mgmt", level: "intermediate",
+    front: "[Live] What are the default DeltaV Live themes?",
+    back: "Silver, Dark Blue, Dark Grey, Light Blue, and Tan. The Themes tab in Workstation Management assigns which themes are enabled for a workstation." },
+
+  { manual: "live", topic: "Live: Workstation Mgmt", level: "intermediate",
+    front: "[Live vs Operate] How does Saving/Publishing in DeltaV Live compare to DeltaV Operate?",
+    back: "Saving and Publishing in DeltaV Live is analogous to Saving and Downloading in DeltaV Explorer/Operate. A publish icon appears next to workstations that need publishing; on publish, a popup lists all workstations needing it and you can choose which to publish (it also counts how many items will be published)." },
+
+  /* ---- GRAPHICS STUDIO ---- */
+  { manual: "live", topic: "Live: Graphics Studio", level: "beginner",
+    front: "[Live vs Operate] What is Graphics Studio and how does it differ from Operate's editor?",
+    back: "Graphics Studio is DeltaV Live's dedicated graphics editor. DeltaV Operate used two separate instances — Operate Configure and Operate Run — that could not run side by side. Graphics Studio can run together with DeltaV Live, and multiple instances of Graphics Studio can be open simultaneously." },
+
+  { manual: "live", topic: "Live: Graphics Studio", level: "intermediate",
+    front: "[Live] What are the three main areas of the Graphics Studio interface?",
+    back: "1) Ribbon — menu bar of common commands/tasks. 2) Explorer Pane — manages Live configuration databases via two tabs: Library Explorer and Graphics Explorer. 3) Display/Documents Workspace — view/edit configuration (Palette, Selection, Graphics Configuration, and Content panes)." },
+
+  { manual: "live", topic: "Live: Graphics Studio", level: "intermediate",
+    front: "[Live] What is the parameter path notation in Graphics Studio? Give an example.",
+    back: "Data Server[\"Module/Block/Parameter.Field\"]. Example: DLSYS[\"MTR-102/DC1/SP_D.CV\"]. DLSYS is the workstation's data server; the field is commonly CV (Current Value) or ST (Status)." },
+
+  { manual: "live", topic: "Live: Graphics Studio", level: "beginner",
+    front: "[Live] What is a Data Link in Graphics Studio and what are its three main types?",
+    back: "A Data Link displays a module's value on the graphic. Three main types: String, Numeric, and Modes. Data Links can also allow write input (operator entry)." },
+
+  { manual: "live", topic: "Live: Graphics Studio", level: "intermediate",
+    front: "[Live] What are the five types of Interactions on a Graphics Studio object?",
+    back: "Click, Double Click, Secondary Click (Right Click), Hover, and Drag. Interactions are actions that occur when the user interacts with the object (e.g., open a faceplate on click)." },
+
+  { manual: "live", topic: "Live: Graphics Studio", level: "intermediate",
+    front: "[Live] What is a Data Placeholder and how is it written?",
+    back: "A Data Placeholder embeds live parameter data inside a text string. Assign a placeholder and insert {#} where the data should appear (# = placeholder number). Example label 'Flow on Tank 101 is: {1}' renders in Live as 'Flow on Tank 101 is: 28.7'." },
+
+  { manual: "live", topic: "Live: Graphics Studio", level: "expert",
+    front: "[Live] Distinguish the == , === , != , and !== operators in Graphics Studio.",
+    back: "== Equal (0 == false → True). === Strict Equal, also checks type (0 === false → False, type mismatch). != Not Equal. !== Strict Not Equal. Also: >, <, >=, <= for magnitude comparisons." },
+
+  { manual: "live", topic: "Live: Graphics Studio", level: "expert",
+    front: "[Live] What is Quick Online View and what are its key cautions?",
+    back: "Quick Online View (Review tab) lets you view a graphic without publishing/using DeltaV Live. Cautions: some limitations exist (e.g., faceplates do not work), and it is NOT a simulated environment — any changes to parameters affect REAL values." },
+
+  { manual: "live", topic: "Live: Graphics Studio", level: "intermediate",
+    front: "[Live] How do you add an animation to a graphic object?",
+    back: "Select the diamond icon next to a property in the Graphics Configuration pane. Animations change a property (e.g., vertical fill of a rectangle for tank level, or colour) based on a parameter's value; you specify Fill and Scale parameters as needed." },
+
+  { manual: "live", topic: "Live: Graphics Studio", level: "intermediate",
+    front: "[Live] What is the Connector tool and connection anchor points?",
+    back: "The connector tool connects equipment on a display with lines. Most preconfigured shapes and GEMs have connection anchor points — predetermined spots the connector line snaps to." },
+
+  { manual: "live", topic: "Live: Graphics Studio", level: "intermediate",
+    front: "[Live] What does the Verification Tool do, and how are issues categorized?",
+    back: "The Verification Tool parses a graphic for issues before publishing. Results are categorized by severity as Error, Warning, or Information based on how critical the issue is." },
+
+  { manual: "live", topic: "Live: Graphics Studio", level: "expert",
+    front: "[Live vs Operate] What are the publishing advantages of DeltaV Live over Operate?",
+    back: "Live publishes individual displays instead of downloading the whole Operator Station, so the station need not be 'locked' during download. You can publish to an offline workstation (it updates when back online), delete displays without them returning, and use targeted publishing to specific workstations. A display can have at most two revisions at once." },
+
+  { manual: "live", topic: "Live: Graphics Studio", level: "intermediate",
+    front: "[Live] Which configurations must be published to take effect?",
+    back: "DeltaV Live-enabled workstations, Languages, Themes, Displays, Display Sets, Contextual Displays, Layouts, Standards, and Functions. When any of these are created or modified they must be published to update." },
+
+  /* ---- DELTAV LIVE RUNTIME ---- */
+  { manual: "live", topic: "Live: Runtime", level: "beginner",
+    front: "[Live] Why does DeltaV Live use vector displays?",
+    back: "Vector displays let the user zoom in or rescale without loss of quality — unlike raster graphics. This supports high-DPI monitors and flexible layouts." },
+
+  { manual: "live", topic: "Live: Runtime", level: "intermediate",
+    front: "[Live vs Operate] What replaces the Operate toolbar, and what is the Navigation Bar?",
+    back: "The Menu Bar replaces the DeltaV Operate toolbar, giving the operator access to tools and applications (buttons can be enabled/disabled). The Navigation Bar moves the user between pages quickly and can be configured as a flat list (like Operate) or a hierarchical list." },
+
+  { manual: "live", topic: "Live: Layouts & Displays", level: "intermediate",
+    front: "[Live] What is a Layout, and which monitor configurations are supported?",
+    back: "A Layout defines where displays appear and lets users arrange/configure display contents. Single, Dual, and Quad monitor layouts are supported; multiple displays can be placed on one screen (useful for large monitors)." },
+
+  { manual: "live", topic: "Live: Layouts & Displays", level: "intermediate",
+    front: "[Live] Within a layout, what is the difference between Screens and Display Frames?",
+    back: "Screens represent the operator's physical monitor setup (Single, Dual, or Quad). Display Frames are the graphical elements/containers shown on the screen where displays are rendered." },
+
+  { manual: "live", topic: "Live: Layouts & Displays", level: "intermediate",
+    front: "[Live] What is a Display Set?",
+    back: "A Display Set is a collection of grouped displays so operators access only the displays relevant to their duties. A workstation can be configured to access only that set, and display sets provide built-in navigation across the displays." },
+
+  { manual: "live", topic: "Live: Layouts & Displays", level: "expert",
+    front: "[Live] Contrast Non-Hierarchical and Hierarchical displays in a Display Set.",
+    back: "Non-Hierarchical: collect displays not in a specific group and limit operator access (though operators can still reach others via on-screen links or the alarm banner); you must uncheck 'Include All Displays' to add them. Hierarchical: grouped into 4 levels (Level 1 = overview), multiple displays per level — useful for plant-wide sets with a hierarchy per area; the layout must enable the display-hierarchy option and set the number of levels." },
+
+  { manual: "live", topic: "Live: Layouts & Displays", level: "expert",
+    front: "[Live] What is Automatic Display Coordination and its three frame options?",
+    back: "A layout can auto-coordinate frames so that when one frame opens a level display, other frames change content to show hierarchically related displays together (maintaining situational awareness). Options: Auto-Coordinate Higher Levels; Prevent External Coordination (displays from this frame's nav bar open in other frames); Auto-open Display Levels (this frame auto-opens the selected hierarchy level)." },
+
+  /* ---- GEMs ---- */
+  { manual: "live", topic: "Live: GEMs", level: "beginner",
+    front: "[Live vs Operate] What is a GEM and what does it replace?",
+    back: "A GEM (Graphical Element) is DeltaV Live's reusable graphic object; it REPLACES DeltaV Operate's Dynamo. GEM classes act like module classes: change the GEM class and the change propagates to all GEM instances based on it." },
+
+  { manual: "live", topic: "Live: GEMs", level: "intermediate",
+    front: "[Live] What are High Performance GEMs?",
+    back: "A set of GEMs designed on Human-Centered Design principles: alarm and status information is always in the same location, and data is shown in effective ways (e.g., bar graphs instead of data links). They exist for equipment such as pumps, analog valves, and discrete valves." },
+
+  { manual: "live", topic: "Live: GEMs", level: "expert",
+    front: "[Live] What do the GEM status icons Mode, Not Running, and Bad IO indicate?",
+    back: "Mode: block mode not as expected (PID: MODE.ACTUAL≠NORMAL or ≠TARGET; DC: TARGET/ACTUAL≠NORMAL or permissive active). Not Running: MSTATUS is Out of Service, Breakpoint Set, or Not Running. Bad IO: BLOCK_ERR has Out of Service/Readback Failed/Output Failure/Input Failure/Other Error — never shown when Not Running is shown." },
+
+  { manual: "live", topic: "Live: GEMs", level: "expert",
+    front: "[Live] What do the GEM icons Simulate Active, No Permit, Interlock Bypassed, and Interlocked mean?",
+    back: "Simulate Active: block is being simulated (hidden if Not Running or Bad IO shown). No Permit: a permissive condition is active. Interlock Bypassed: the BYPASSED parameter is active. Interlocked: the DC block's DC_STATE is Shutdown/Interlocked." },
+
+  { manual: "live", topic: "Live: GEMs", level: "expert",
+    front: "[Live] Decode the GEM naming convention using HP_MA3_CV_ML.",
+    back: "HP = High Performance; M = Module; A = Analog (vs Discrete); 3 = number of function-block types the GEM works with (e.g., AI, ALM, PID); then bar-graph type (C=Combination, D=Deviation, N=None, NML=Normalized, V=Vertical, H=Horizontal); then size (S=Small, M=Medium); plus equipment codes like PMP=Pump, VLV=Valve." },
+
+  { manual: "live", topic: "Live: GEMs", level: "intermediate",
+    front: "[Live] What are the GEM Class Tools in the ribbon (Design, Notify, etc.)?",
+    back: "Design: launches the GEM Configuration Designer to define configurable GEM parameters. Resize to Fit Contents: resizes the canvas. Connection Point Tool: creates connection anchor points. Notify: sets all displays using the GEM to 'Work in Progress' when the GEM class is modified." },
+
+  { manual: "live", topic: "Live: GEMs", level: "intermediate",
+    front: "[Live] What is the GEM Configuration Designer and the most common GEM property?",
+    back: "It provides tools to create configurable properties that appear for a GEM. The most common property is one to enter the module name linked to the GEM. Property groups must be added before adding properties." },
+
+  { manual: "live", topic: "Live: GEMs", level: "expert",
+    front: "[Live] How do you reference a GEM property in a data link, e.g., for a generic module name?",
+    back: "Reference a GEM property with Gem.PropertyName. Replace the hard-coded module name with the placeholder. If the module-name property is ModName, the path becomes: DLSYS[Gem.ModName + \"/DC1/SP_D.CV\"]." },
+
+  { manual: "live", topic: "Live: GEMs", level: "intermediate",
+    front: "[Live] What are the two ways to create a GEM?",
+    back: "1) From scratch using a combination of shapes, data links, text, and functions. 2) By selecting objects on a display and choosing 'Convert to Linked GEM' — then add a GEM property for the Control Tag and assign it to a generic data link so it works for multiple modules." },
+
+  { manual: "live", topic: "Live: GEMs", level: "expert",
+    front: "[Live vs DeltaV] Contrast linked vs unlinked GEMs.",
+    back: "A linked GEM stays connected to its GEM class — any class change affects it. An unlinked GEM is not affected by class changes (analogous to converting a module to classless in DeltaV). Individual properties of a linked GEM can still be overridden (e.g., changing a line's colour from the display's Graphics Configuration pane)." },
+
+  { manual: "live", topic: "Live: GEMs", level: "intermediate",
+    front: "[Live] How do you find which displays use a particular GEM?",
+    back: "Open the GEM and go to File → Info while the GEM is open; it lists the displays using that GEM (References)." },
+
+  { manual: "live", topic: "Live: GEMs", level: "intermediate",
+    front: "[Live] What is the Custom Selection GEM property?",
+    back: "A configuration property that creates a custom selection list for the user to choose from — up to 16 options can be created." },
+
+  { manual: "live", topic: "Live: GEMs", level: "intermediate",
+    front: "[Live] What is the Chart Builder feature on High Performance GEMs?",
+    back: "High Performance GEMs let you create charts easily: right-click the GEM and add the desired parameter to the Chart Builder." },
+
+  /* ---- FUNCTIONS ---- */
+  { manual: "live", topic: "Live: Functions", level: "intermediate",
+    front: "[Live vs Operate] What is a Function and what does it replace?",
+    back: "A Function creates logic that converts a value of one type into a value of a different type (the DeltaV Live equivalent of an Operate Lookup Table). Inputs can be floats, strings, or Booleans; outputs can be colours, fonts, Booleans, images, strings, measurements, or numbers." },
+
+  { manual: "live", topic: "Live: Functions", level: "expert",
+    front: "[Live] How many inputs/calculations can a Function have, and in what order do calculations run?",
+    back: "A Function can use 1 to 5 inputs and up to 5 calculations. When executing in DeltaV, calculations run from top to bottom as they appear in Graphics Studio." },
+
+  { manual: "live", topic: "Live: Functions", level: "expert",
+    front: "[Live] What are the three conversion-table logic types in a Function?",
+    back: "Rule Based: rules define input→output (e.g., Avg_Press < 1 → Red, > 1 → Green). Value Based: compares a single value to several choices and returns the matching value (e.g., 0–1 → Red, 1–2 → Green). Script Based: write custom expressions to define input/output types." },
+
+  /* ---- CONTEXTUAL DISPLAYS ---- */
+  { manual: "live", topic: "Live: Contextual Displays", level: "intermediate",
+    front: "[Live vs Operate] What are Contextual Displays and what do they replace?",
+    back: "Contextual Displays are graphics whose content depends on the context they open in — the DeltaV Live equivalent of Operate's Faceplates, Detail faceplates, and Popup Pictures. A single graphic configuration can be shared by different DeltaV objects and launched via a configured interaction (e.g., click)." },
+
+  { manual: "live", topic: "Live: Contextual Displays", level: "expert",
+    front: "[Live] How do you reference the context tag in a contextual display?",
+    back: "Use Dsp.Tag. For example: DLSYS[Dsp.Tag + \"/PID1/SP.CV\"]. The Dsp.Tag resolves to whichever object opened the contextual display." },
+
+  { manual: "live", topic: "Live: Contextual Displays", level: "intermediate",
+    front: "[Live] Best practice for building a faceplate from scratch?",
+    back: "Start from a template. Existing library templates contain useful operator scripts (e.g., acknowledging alarms, bottom buttons). You can also customize existing faceplates/detail faceplates when only a small change is needed." },
+
+  { manual: "live", topic: "Live: Contextual Displays", level: "intermediate",
+    front: "[Live] What is a Watch Area?",
+    back: "A Watch Area lets the user monitor desired parameters for an extended period. GEMs can be dragged into the watch area, and a watch area can be made part of a layout by creating a display frame with a watch area." },
+
+  /* ---- IMPORT/EXPORT & CONVERSION ---- */
+  { manual: "live", topic: "Live: Import/Export", level: "intermediate",
+    front: "[Live vs Operate] How does graphics storage/transfer differ in Live vs Operate?",
+    back: "Unlike DeltaV Operate, Live graphics are NOT stored in a folder you can copy/paste — all graphics are controlled through DeltaV Graphics Studio. To bring images in, use Import; to send them out, use Export." },
+
+  { manual: "live", topic: "Live: Conversion", level: "intermediate",
+    front: "[Live] What are the steps to convert DeltaV Operate graphics to DeltaV Live?",
+    back: "1) Import the Conversion Toolbar into DeltaV Operate Configure mode. 2) Use the ExportToDeltaVLive utility in DeltaV Operate. 3) Import the files into DeltaV Live. 4) Check the log files to fix any conversion issues." },
+
+  { manual: "live", topic: "Live: Conversion", level: "expert",
+    front: "[Live] What happens to Dynamos during conversion, and how do you troubleshoot issues?",
+    back: "Standard DeltaV Operate Dynamos are converted to DeltaV GEMs; some pictures need reformatting afterward. The error log shows broken dynamos/datalinks. Search DeltaV Books Online for 'Conversion Issues and Solutions', and search the migration error code (e.g., #mig0027#) within the migrated graphics in Graphics Studio." },
+
+  /* ---- ADMINISTRATION ---- */
+  { manual: "live", topic: "Live: Administration", level: "intermediate",
+    front: "[Live] What tools are available in DeltaV Live Administration?",
+    back: "Similar to the DeltaV Database Administration tool. Tools: Workstation Management (enable/disable Live and settings), DeltaV Live Diagnostics (health of Live workstations), Event Viewer (Live event log, e.g., replacing/removing displays), SQL Data Sources (connect to SQL databases), and Database Management." },
+
+  { manual: "live", topic: "Live: Administration", level: "expert",
+    front: "[Live] What database operations does DeltaV Live Administration provide?",
+    back: "Start/stop the Database Server; Show Active Connections (list/disconnect connected workstations); Copy, Create, Delete, Export, Import, Rename, Switch (mainly for PK controllers), Backup, and Restore Database. Export creates individual files per object, whereas Backup creates one file that includes everything." },
+
+  /* ---- SCRIPTING ---- */
+  { manual: "live", topic: "Live: Scripting", level: "intermediate",
+    front: "[Live vs Operate] What scripting language does DeltaV Live use?",
+    back: "DeltaV Live uses TypeScript (Operate used VBA-style scripting). Uses include for/while loops and if statements. Graphics Studio Help is a good starting point, and DeltaV Books Online covers general DeltaV help. Note: many tasks that needed scripting in Operate are now built into Live." },
+
+  /* ---- BEST PRACTICES ---- */
+  { manual: "live", topic: "Live: Best Practices", level: "intermediate",
+    front: "[Live] Best practice: how should GEMs be built so one graphic works for many modules?",
+    back: "Build GEMs as linked GEM classes with a configurable Control-Tag/Module-Name property (e.g., ModName) and reference it generically: DLSYS[Gem.ModName + \"/DC1/SP_D.CV\"]. Then a single class change propagates to every instance, and each instance just supplies its module name." },
+
+  { manual: "live", topic: "Live: Best Practices", level: "intermediate",
+    front: "[Live] Best practice: prefer High Performance GEMs — why?",
+    back: "High Performance GEMs follow Human-Centered Design: alarm/status always in the same place and data shown as bar graphs rather than raw numbers. This improves situational awareness and faster abnormal-condition detection than dense numeric displays." },
+
+  { manual: "live", topic: "Live: Best Practices", level: "expert",
+    front: "[Live] Best practice: verify and publish safely.",
+    back: "Run the Verification Tool before publishing to catch Errors/Warnings. Use targeted publishing to update only affected workstations (no station lock, offline stations update when back online). Remember Quick Online View is NOT simulated — changes hit real values — so use a real test strategy for logic." },
+
+  { manual: "live", topic: "Live: Best Practices", level: "intermediate",
+    front: "[Live] Best practice: organize operator access with display sets and hierarchy.",
+    back: "Use Display Sets to give operators only the displays relevant to their duties, and Hierarchical displays (4 levels, Level 1 = overview) with Automatic Display Coordination so related displays appear together across frames — maximizing situational awareness. Use Non-Hierarchical groups for the rest." }
 ];
 
 // Expose for the app

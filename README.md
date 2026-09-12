@@ -1,13 +1,13 @@
 # DV Trainer
 
-A dark-mode study-card web app for learning **Emerson DeltaV** function blocks and system implementation. Pick a difficulty level and a set of source material, then drill flashcards or run a self-test. Ships with **~1,300 study cards** spanning ~60 function blocks (every parameter), modes/cascade/status behavior, PID, and DeltaV implementation.
+A dark-mode study-card web app for learning **Emerson DeltaV** function blocks and system implementation. Pick a difficulty level and a set of source material, then drill flashcards or run a self-test. Ships with **~1,350 study cards** spanning ~60 function blocks (every parameter), modes/cascade/status behavior, PID, DeltaV implementation, and **DeltaV Live** (with Live-vs-Operate comparisons).
 
 > All study-card content is **derived study material** written from a set of DeltaV manuals. The original manuals themselves are copyrighted Emerson training materials and are **not** included in this repository.
 
 ## Features
 
 - **Three levels** — Beginner, Intermediate, Expert.
-- **Material scopes** — Function Block manuals, the Implementation course, or All manuals.
+- **Material scopes** — Function Block manuals, the Implementation course (Operate + DeltaV Live), or All manuals.
 - **Deep parameter coverage** — a card for every parameter of every documented function block, plus “coding with parameters” (fields, references, named sets, option bitstrings, expressions).
 - **Two study modes** — Flashcards (flip to reveal) and Self-Test (rate recall: Again / Hard / Good / Easy).
 - **Progress tracking** — mastered cards are remembered per level/scope in `localStorage`.
