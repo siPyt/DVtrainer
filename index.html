@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DV Trainer — DeltaV Study Cards</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand" id="brandHome" title="Home">
+        <span class="brand-mark">DV</span>
+        <span class="brand-name">Trainer</span>
+      </div>
+      <div class="topbar-meta" id="topbarMeta"></div>
+    </header>
+
+    <main id="app">
+      <!-- ===================== HOME ===================== -->
+      <section id="homeView" class="view active">
+        <div class="hero">
+          <h1>DeltaV Study Trainer</h1>
+          <p class="sub">
+            Master DeltaV function blocks &amp; implementation — built entirely
+            from your manuals.
+          </p>
+        </div>
+
+        <div class="panel">
+          <h2 class="panel-title">
+            <span class="step-num">1</span> Choose your level
+          </h2>
+          <div class="option-grid" id="levelGrid">
+            <button class="option-card" data-level="beginner">
+              <span class="opt-icon">🌱</span>
+              <span class="opt-title">Beginner</span>
+              <span class="opt-desc"
+                >Core definitions &amp; what each block does</span
+              >
+              <span class="opt-count" data-level-count="beginner"></span>
+            </button>
+            <button class="option-card" data-level="intermediate">
+              <span class="opt-icon">⚙️</span>
+              <span class="opt-title">Intermediate</span>
+              <span class="opt-desc"
+                >Modes, parameters, configuration &amp; use</span
+              >
+              <span class="opt-count" data-level-count="intermediate"></span>
+            </button>
+            <button class="option-card" data-level="expert">
+              <span class="opt-icon">🧠</span>
+              <span class="opt-title">Expert</span>
+              <span class="opt-desc"
+                >Algorithms, edge cases &amp; deep behavior</span
+              >
+              <span class="opt-count" data-level-count="expert"></span>
+            </button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2 class="panel-title">
+            <span class="step-num">2</span> Choose your material
+          </h2>
+          <div class="option-grid" id="scopeGrid">
+            <button class="option-card" data-scope="function-block">
+              <span class="opt-icon">🧩</span>
+              <span class="opt-title">Function Block</span>
+              <span class="opt-desc">The three Function Block manuals</span>
+              <span class="opt-count" data-scope-count="function-block"></span>
+            </button>
+            <button class="option-card" data-scope="implementation">
+              <span class="opt-icon">🏭</span>
+              <span class="opt-title">Implementation</span>
+              <span class="opt-desc">DeltaV Implementation I course book</span>
+              <span class="opt-count" data-scope-count="implementation"></span>
+            </button>
+            <button class="option-card" data-scope="all">
+              <span class="opt-icon">📚</span>
+              <span class="opt-title">All Manuals</span>
+              <span class="opt-desc">Everything — all four manuals</span>
+              <span class="opt-count" data-scope-count="all"></span>
+            </button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2 class="panel-title">
+            <span class="step-num">3</span> Choose a mode &amp; start
+          </h2>
+          <div class="start-row">
+            <div
+              class="mode-toggle"
+              id="modeToggle"
+              role="group"
+              aria-label="Study mode"
+            >
+              <button class="mode-btn active" data-mode="flashcards">
+                Flashcards
+              </button>
+              <button class="mode-btn" data-mode="quiz">Self-Test</button>
+            </div>
+            <label class="shuffle-check">
+              <input type="checkbox" id="shuffleChk" checked /> Shuffle
+            </label>
+            <button class="start-btn" id="startBtn" disabled>
+              Start studying
+            </button>
+          </div>
+          <p class="selection-summary" id="selectionSummary">
+            Select a level and material to begin.
+          </p>
+        </div>
+
+        <div class="panel library">
+          <h2 class="panel-title">Manual library</h2>
+          <ul class="manual-list" id="manualList"></ul>
+          <p class="extend-note">
+            This trainer grows automatically as you add more manuals to the
+            dataset.
+          </p>
+        </div>
+      </section>
+
+      <!-- ===================== STUDY ===================== -->
+      <section id="studyView" class="view">
+        <div class="study-bar">
+          <button class="ghost-btn" id="backBtn">← Home</button>
+          <div class="study-title" id="studyTitle"></div>
+          <div class="progress-wrap">
+            <div class="progress-track">
+              <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <span class="progress-text" id="progressText">0 / 0</span>
+          </div>
+        </div>
+
+        <div class="filter-bar">
+          <input
+            type="search"
+            id="searchInput"
+            placeholder="Filter by keyword or topic…"
+          />
+          <select
+            id="topicFilter"
+            title="Filter by topic"
+            aria-label="Filter by topic"
+          >
+            <option value="">All topics</option>
+          </select>
+          <span class="deck-count" id="deckCount"></span>
+        </div>
+
+        <div class="card-stage" id="cardStage">
+          <div class="flashcard" id="flashcard">
+            <div class="flashcard-inner">
+              <div class="flashcard-face flashcard-front">
+                <div class="card-tags" id="frontTags"></div>
+                <div class="card-q" id="frontText"></div>
+                <div class="flip-hint">Click to reveal answer</div>
+              </div>
+              <div class="flashcard-face flashcard-back">
+                <div class="card-tags" id="backTags"></div>
+                <div class="card-a" id="backText"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quiz self-rating -->
+          <div class="quiz-controls" id="quizControls">
+            <p class="quiz-prompt">How well did you know it?</p>
+            <div class="rate-row">
+              <button class="rate-btn again" data-rate="again">Again</button>
+              <button class="rate-btn hard" data-rate="hard">Hard</button>
+              <button class="rate-btn good" data-rate="good">Good</button>
+              <button class="rate-btn easy" data-rate="easy">Easy</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="nav-row">
+          <button class="nav-btn" id="prevBtn">‹ Prev</button>
+          <button class="flip-btn" id="flipBtn">Flip</button>
+          <button class="nav-btn" id="nextBtn">Next ›</button>
+        </div>
+
+        <div class="session-stats" id="sessionStats"></div>
+      </section>
+
+      <!-- ===================== DONE ===================== -->
+      <section id="doneView" class="view">
+        <div class="done-card">
+          <div class="done-icon">🎉</div>
+          <h2>Deck complete!</h2>
+          <p id="doneSummary"></p>
+          <div class="done-actions">
+            <button class="start-btn" id="restartBtn">Study again</button>
+            <button class="ghost-btn" id="doneHomeBtn">Home</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span
+        >DV Trainer · Content sourced exclusively from the provided DeltaV
+        manuals.</span
+      >
+    </footer>
+
+    <script src="data/cards.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

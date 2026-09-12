@@ -1,0 +1,651 @@
+/*
+ * DV Trainer — Study Card Dataset
+ * All content derived strictly from the four DeltaV manuals in this folder:
+ *   fb2004 : DeltaV Function Block Reference (D800018X012, 2004)
+ *   pid    : DeltaV Proportional-Integral-Derivative (PID) Function Block notes
+ *   fbref  : DeltaV Function Block Reference (D800018X052, 2005-2008)
+ *   impl   : DeltaV Implementation I - Using DeltaV Operate (Course 7009, v15.LTS)
+ *
+ * scope: 'function-block' covers fb2004 + pid + fbref ; 'implementation' covers impl.
+ * level: 'beginner' | 'intermediate' | 'expert'
+ *
+ * To extend: add manuals to DV_MANUALS and append card objects to DV_CARDS.
+ */
+
+const DV_MANUALS = {
+  fb2004: { name: "DeltaV Function Block Reference (2004)", short: "FB Ref '04", scope: "function-block" },
+  pid:    { name: "DeltaV PID Function Block",              short: "PID",         scope: "function-block" },
+  fbref:  { name: "DeltaV Function Block Reference (2005-2008)", short: "FB Ref",  scope: "function-block" },
+  impl:   { name: "DeltaV Implementation I — Using DeltaV Operate (7009)", short: "Impl I", scope: "implementation" }
+};
+
+const DV_CARDS = [
+  /* ============================================================
+   * FUNCTION BLOCKS — GENERAL CONCEPTS
+   * ============================================================ */
+  { manual: "fbref", topic: "Fundamentals", level: "beginner",
+    front: "What is a function block in DeltaV?",
+    back: "A function block is a self-contained algorithm (such as AI, PID, or AO) that performs a specific control or calculation task. Blocks are wired together inside a module to build a control strategy. Each block processes inputs and produces outputs every time it executes." },
+
+  { manual: "fbref", topic: "Fundamentals", level: "beginner",
+    front: "What is the block scan rate?",
+    back: "The block scan rate lets blocks execute at different rates within the same module by skipping scans. Default is 1 (a 1:1 ratio — the block executes every module scan). A scan rate of 3 means a 1:3 ratio (executes every third scan). It effectively multiplies the module scan rate." },
+
+  { manual: "fbref", topic: "Fundamentals", level: "intermediate",
+    front: "If a module scans every 1 second and a block's scan rate is set to 5, how often does the block execute?",
+    back: "Every 5 seconds. The block skips four module scans and executes on the fifth. This is useful for cascade control: combine both loops in one module as long as the outer loop's scan rate is a multiple of the inner loop's." },
+
+  { manual: "fbref", topic: "Fundamentals", level: "intermediate",
+    front: "What is an extensible block/parameter?",
+    back: "An extensible parameter lets you add inputs/outputs to a block instead of chaining multiple blocks. For example, you can extend an ADD block to wire up to 16 values into a single block rather than joining many ADD blocks together." },
+
+  { manual: "fbref", topic: "Composites", level: "intermediate",
+    front: "What is a function block composite?",
+    back: "A composite is a group of function blocks that work together as a reusable algorithm — similar to a subroutine. You build it once, store it in the Function Block Library, and reuse it across loops and applications." },
+
+  { manual: "fbref", topic: "Composites", level: "expert",
+    front: "What does the PT_COMP composite template do?",
+    back: "PT_COMP compensates a measured flow based on measured pressure and/or temperature, for gas or liquid streams (differential-pressure or mass flowmeter). Inputs: measured flow, pressure, temperature; output: compensated flow (status = that of measured flow). If pressure/temperature status is not Good, the reference (calibration) value is used, disabling that compensation term. For a differential-pressure flowmeter the compensation factor is the square root of the standard equation." },
+
+  /* ---- MODES ---- */
+  { manual: "fb2004", topic: "Modes", level: "beginner",
+    front: "What does the Auto (Automatic) mode do?",
+    back: "In Auto, the control algorithm of the block is active and uses an operator-entered setpoint to determine the block output." },
+
+  { manual: "fb2004", topic: "Modes", level: "beginner",
+    front: "What does Manual (Man) mode do?",
+    back: "In Manual mode the block output is set directly by the operator (or by logic external to the block); the control algorithm does not determine the output." },
+
+  { manual: "fb2004", topic: "Modes", level: "beginner",
+    front: "What does Out of Service (OOS) mode mean?",
+    back: "In OOS the block algorithm is not active. The output is maintained at its last value or a specified failure-action value. OOS is always a permitted mode." },
+
+  { manual: "fbref", topic: "Modes", level: "intermediate",
+    front: "What is Cascade (Cas) mode?",
+    back: "Cas is like Auto except the setpoint is supplied by another function block through the CAS_IN parameter. The block maintains a back-calculation value (BKCAL_OUT) to provide bumpless mode transfer when the mode changes." },
+
+  { manual: "fbref", topic: "Modes", level: "intermediate",
+    front: "What is Remote Cascade (RCas) mode?",
+    back: "RCas is like Cas except the setpoint is supplied by an external control program through RCAS_IN. The block maintains a back-calculation value (RCAS_OUT) for bumpless transfer." },
+
+  { manual: "fbref", topic: "Modes", level: "intermediate",
+    front: "What is Remote Out (ROut) mode?",
+    back: "ROut is like Man except the OUT value is supplied by an external control program through ROUT_IN rather than by the operator. The block maintains ROUT_OUT for bumpless transfer." },
+
+  { manual: "fbref", topic: "Modes", level: "expert",
+    front: "What is Initialization Manual (IMan) mode and when does it occur?",
+    back: "IMan is applied to the upstream block of a cascade pair when its downstream partner is in a non-cascade mode. It prevents the upstream block from closing the cascade. IMan is never a permitted target mode — it means the block is tracking downstream operation. When the downstream block returns to Cas/RCas, the upstream block leaves IMan and returns to its target mode." },
+
+  { manual: "fbref", topic: "Modes", level: "expert",
+    front: "What is Local Override (LO) mode?",
+    back: "LO is entered when tracking is activated: the output is driven to a value other than that produced by normal execution. For a control block the output tracks a specific input (triggered by a discrete track switch); for an output block, failure action initiates. LO is never a permitted target mode; when tracking deactivates, the block returns to its target mode." },
+
+  { manual: "fbref", topic: "Modes", level: "intermediate",
+    front: "Distinguish Target, Actual, Permitted, and Normal mode fields.",
+    back: "Target = the mode the block is trying to attain (what the operator sets). Actual = the current operating mode. Permitted = the modes allowed as targets (write service blocks non-permitted targets; configurable per block). Normal = the correct/expected mode for most plant operation, set during configuration." },
+
+  { manual: "fbref", topic: "Modes", level: "expert",
+    front: "In what priority order are function block modes ranked?",
+    back: "Listed in inverse priority: RCas, ROut, Cas, Auto, Man, IMan, LO, OOS — higher modes in the list have lower priority. Modes have priority, and a block climbs/sheds through this path (e.g., to reach RCas from Man it passes through Auto)." },
+
+  { manual: "fbref", topic: "Modes", level: "expert",
+    front: "What does the SHED_OPT parameter control?",
+    back: "SHED_OPT (a named-set parameter) determines how a block sheds from or climbs to a remote mode on a remote-cascade connection failure. A block climbs and sheds through the same path. Options are grouped as 'Shed With Return' (keeps trying to restore remote cascade) and 'Shed With No Return' (changes the target mode, no restore attempt), each with Normal / Retained Target / Auto / Man variants." },
+
+  { manual: "fbref", topic: "Modes", level: "expert",
+    front: "How does DeltaV handle the 'Retained Target' shed option?",
+    back: "DeltaV does not support Retained Target shed. Regardless of block location, the retained-target bits are turned off and the block sheds to Auto. Devices that do not support retained-target operation ignore those bits." },
+
+  { manual: "fbref", topic: "Modes", level: "expert",
+    front: "What two rules constrain mode-shed logic when SHED_OPT calls for a non-permitted mode?",
+    back: "1) Shed logic never results in a non-permitted target mode. 2) Shed logic never attempts to attain an actual mode of Auto or Cas if that mode is not permitted." },
+
+  /* ---- CASCADE ---- */
+  { manual: "fbref", topic: "Cascade", level: "intermediate",
+    front: "In a cascade, what are the master and slave, and what is back calculation?",
+    back: "A cascade is two-way communication. The master (driving) block provides an output used as the slave's cascade input. The slave provides a back-calculation output telling the master when its output is accepted and what limit conditions exist below it; the master reads this through its back-calculation input. Each cascade mode has at least one cascade input and one back-calc output." },
+
+  { manual: "fbref", topic: "Cascade", level: "expert",
+    front: "Describe the IR/IA cascade handshake.",
+    back: "When the slave's target is set to a cascade mode, its back-calc output is set with substatus Initialization Requested (IR). Seeing IR at its back-calc input, the master sets Initialization Acknowledge (IA) in its output substatus. The combination of IR (slave back-calc out) and IA (slave cascade in) triggers the slave to change actual mode to cascade. Applies to Cas, RCas, and ROut." },
+
+  { manual: "fbref", topic: "Cascade", level: "expert",
+    front: "What is the exception to the normal cascade handshake?",
+    back: "When CAS_IN (or CAS_IN_D) has a NonCascade substatus — i.e., no master control block gives GoodCascade but a parameter/calculation block gives GoodNonCascade — the receiving block does not need to see IA. If target mode is Cas and the CAS_IN status is GoodNonCascade (and nothing else prevents climbing), actual mode changes to Cas immediately." },
+
+  /* ---- STATUS ---- */
+  { manual: "fb2004", topic: "Status", level: "beginner",
+    front: "What is the initial status of function block outputs after a download?",
+    back: "Bad. Status then propagates from input to output as the block executes." },
+
+  { manual: "fbref", topic: "Status", level: "intermediate",
+    front: "What are the three broad quality categories of a function block status?",
+    back: "Good, Bad, and Uncertain. Status is carried on signals (with substatus and limit information) and propagates from a block's inputs to its outputs to indicate the trustworthiness of a value." },
+
+  /* ---- PARAMETERS ---- */
+  { manual: "fbref", topic: "Parameters", level: "intermediate",
+    front: "What are the main function block parameter reference types?",
+    back: "Dynamic Reference, External Reference, and Internal Reference parameters. Each has an associated verification step to confirm the reference resolves correctly (Verifying Dynamic/External/Internal References)." },
+
+  { manual: "fbref", topic: "Parameters", level: "intermediate",
+    front: "What is a named-set parameter?",
+    back: "A named-set parameter holds one value selected from a defined set of named choices (an enumeration), e.g., SHED_OPT. It presents human-readable names instead of raw numbers." },
+
+  { manual: "fbref", topic: "Parameters", level: "expert",
+    front: "What is an option bitstring parameter, and name several option groups.",
+    back: "A bitstring parameter where each bit enables an option. Groups include Control Options, I/O Options, Status Options, Integration Options, Device Options, Algorithm Options, Input Options, and FRSI Add-On Options." },
+
+  { manual: "fbref", topic: "Parameters", level: "intermediate",
+    front: "What is a conditional alarming parameter?",
+    back: "Conditional alarming parameters allow alarms to be enabled/evaluated only under defined conditions, so alarms are suppressed or activated depending on process state rather than always active." },
+
+  /* ============================================================
+   * I/O BLOCKS
+   * ============================================================ */
+  { manual: "fb2004", topic: "I/O Blocks", level: "beginner",
+    front: "What does the Analog Input (AI) function block do?",
+    back: "The AI block takes the input from a measurement device (via a channel), converts and scales it into engineering units, and makes it available to other blocks. It supports mode control, alarm detection, and signal status propagation." },
+
+  { manual: "fbref", topic: "I/O Blocks", level: "intermediate",
+    front: "What modes does the Analog Input (AI) function block support?",
+    back: "Out of Service (OOS), Manual (Man), and Automatic (Auto)." },
+
+  { manual: "fbref", topic: "I/O Blocks", level: "expert",
+    front: "How is the channel input status to the AI block affected by limiting at the I/O card?",
+    back: "The channel input status to the AI block is set high- or low-limited by the input card when the channel value reaches a limit, and that limit status propagates through the block's output." },
+
+  { manual: "fb2004", topic: "I/O Blocks", level: "beginner",
+    front: "What does the Analog Output (AO) function block do?",
+    back: "The AO block converts a control signal into a form suitable for a field device output channel (e.g., a valve), performing output channel processing. It supports cascade connection so a controller like PID can drive it." },
+
+  { manual: "fbref", topic: "I/O Blocks", level: "intermediate",
+    front: "What modes does the Analog Output (AO) function block support?",
+    back: "Initialization Manual (IMan), Out of Service (OOS), Local Override (LO, fieldbus only), Manual (Man), Automatic (Auto), Cascade (Cas), and Remote Cascade (RCas)." },
+
+  { manual: "fb2004", topic: "I/O Blocks", level: "beginner",
+    front: "What does the Discrete Input (DI) function block do?",
+    back: "The DI block reads a discrete (on/off) field signal through a channel, applies processing (such as inversion and alarm detection), and makes the discrete value available to the strategy." },
+
+  { manual: "fbref", topic: "I/O Blocks", level: "intermediate",
+    front: "What modes does the Discrete Input (DI) block support?",
+    back: "Out of Service (OOS), Manual (Man), and Automatic (Auto)." },
+
+  { manual: "fb2004", topic: "I/O Blocks", level: "beginner",
+    front: "What does the Discrete Output (DO) function block do?",
+    back: "The DO block drives a discrete field output (such as a solenoid or motor) from a discrete control signal, supporting cascade connection, mode control, and status handling." },
+
+  { manual: "fbref", topic: "I/O Blocks", level: "intermediate",
+    front: "What modes does the Discrete Output (DO) block support?",
+    back: "Initialization Manual (IMan), Out of Service (OOS), Local Override (LO, fieldbus only), Manual (Man), Automatic (Auto), Cascade (Cas), and Remote Cascade (RCas, fieldbus only)." },
+
+  { manual: "fbref", topic: "I/O Blocks", level: "intermediate",
+    front: "What does the Alarm Detection function block provide?",
+    back: "It provides the ability to easily specify alarms on parameters obtained from other blocks. For example, if the OUT value from a Subtraction block goes outside the limits set in the Alarm Detection block, an alarm triggers." },
+
+  { manual: "fbref", topic: "I/O Blocks", level: "expert",
+    front: "What is the H1 Carrier Multiple Discrete Input (FFMDI) block used for?",
+    back: "It brings multiple discrete inputs from an H1 FOUNDATION Fieldbus carrier device into DeltaV as a group. (A separate FFMDI_STD variant is the standard Fieldbus Multiple Discrete Input.) It supports OOS, Man, and Auto modes." },
+
+  { manual: "fbref", topic: "I/O Blocks", level: "expert",
+    front: "What is the Multiplexed Analog Input (FFMAI_RMT) block used for?",
+    back: "It provides multiplexed analog inputs from a remote Fieldbus source, bringing several analog values in through one block. It supports OOS, Man, and Auto modes." },
+
+  { manual: "fbref", topic: "I/O Blocks", level: "intermediate",
+    front: "What does the Pulse Input (PIN) function block do?",
+    back: "The PIN block processes a pulse-frequency input (such as from a flow meter that outputs pulses), converting the pulse rate into an engineering-units value, with mode control and alarm handling." },
+
+  /* ============================================================
+   * ANALOG CONTROL BLOCKS
+   * ============================================================ */
+  { manual: "fbref", topic: "Analog Control", level: "intermediate",
+    front: "What is the Bias/Gain function block typically used for?",
+    back: "It applies a bias and/or gain to a signal. It is often used as a slave to a Splitter block, which in turn is a slave to the upstream controller. It supports seven modes (OOS, IMan, LO, Man, Auto, Cas, RCas)." },
+
+  { manual: "fbref", topic: "Analog Control", level: "expert",
+    front: "What does the Calculation/Logic function block do?",
+    back: "It uses as many as 16 inputs and 16 outputs to evaluate a contained expression, and it supports IF-THEN-ELSE-END_IF structures for logical/mathematical calculations within a module." },
+
+  { manual: "fbref", topic: "Analog Control", level: "intermediate",
+    front: "What is the Control Selector function block ideal for?",
+    back: "Providing automatic override control. It can take multiple control inputs and select among them (e.g., high/low/middle selection) so one loop overrides another based on process conditions. It supports OOS, IMan, Man, and Auto modes." },
+
+  { manual: "fbref", topic: "Analog Control", level: "intermediate",
+    front: "What does the Deadtime function block do?",
+    back: "It delays a signal by a configured dead time (transport delay), reproducing the input at the output after the specified time. It supports OOS, Man, and Auto modes." },
+
+  { manual: "fb2004", topic: "Analog Control", level: "intermediate",
+    front: "What algorithm does the Filter function block use and what does it accomplish?",
+    back: "It executes a first-order lag algorithm (a low-pass filter) to filter out high-frequency noise, smoothing changes in an input signal." },
+
+  { manual: "fbref", topic: "Analog Control", level: "intermediate",
+    front: "What does the Input Selector function block do?",
+    back: "It is a mathematical and logical input calculation block that chooses an output from among its inputs (for example first-good, max, min, middle, or average selection)." },
+
+  { manual: "fbref", topic: "Analog Control", level: "intermediate",
+    front: "Name two typical applications of the Lead/Lag function block.",
+    back: "The Lead/Lag block is useful for a variety of process control applications; two typical uses are feedforward control dynamic compensation and setpoint/signal shaping. It applies lead and lag time constants to a signal." },
+
+  { manual: "fb2004", topic: "Analog Control", level: "intermediate",
+    front: "What does the Limit function block do?",
+    back: "It restricts an output between configured high and low limits (e.g., OUT_HI_LIM and OUT_LO_LIM), clamping the signal so it cannot exceed those bounds, and propagates limit status." },
+
+  { manual: "fbref", topic: "Analog Control", level: "intermediate",
+    front: "What does the Manual Loader function block allow?",
+    back: "It allows an operator to control devices directly by setting the block output. It supports four modes (OOS, IMan, LO, Man)." },
+
+  { manual: "fbref", topic: "Analog Control", level: "intermediate",
+    front: "What does the Ramp function block do?",
+    back: "It generates a ramping setpoint for a control loop, letting you change a setpoint gradually at a controlled rate rather than in a step." },
+
+  { manual: "fbref", topic: "Analog Control", level: "intermediate",
+    front: "What does the Rate Limit function block do?",
+    back: "It keeps a controlled variable from changing too quickly, limiting the rate of change of a signal to protect the process from abrupt moves." },
+
+  { manual: "fbref", topic: "Analog Control", level: "intermediate",
+    front: "What features does the Ratio function block support?",
+    back: "The Ratio block supports signal filtering, mode control, output tracking, and alarm detection. It scales one flow/variable relative to another to maintain a configured ratio, and supports multiple modes." },
+
+  { manual: "fbref", topic: "Analog Control", level: "intermediate",
+    front: "How does the Scaler function block compute its output, and does it have modes?",
+    back: "It uses the input value, input range, and output range to compute the scaled output value. It supports signal status propagation but has no modes or alarm detection." },
+
+  { manual: "fbref", topic: "Analog Control", level: "expert",
+    front: "What does the Signal Characterizer function block do?",
+    back: "It correlates input IN_1 to output OUT_1 and input IN_2 to output OUT_2 using a configured curve (characterization). It supports signal status propagation and two modes, with no standard alarms." },
+
+  { manual: "fbref", topic: "Analog Control", level: "intermediate",
+    front: "What does the Signal Generator function block generate?",
+    back: "It generates sine wave, square wave, and random signal components. The random output is a value between -200 and 200, useful for testing/tuning." },
+
+  { manual: "fbref", topic: "Analog Control", level: "intermediate",
+    front: "How many inputs can the Signal Selector function block read?",
+    back: "As many as sixteen inputs (the number of inputs is extensible). It reads their values and statuses and selects an output based on the configured selection method." },
+
+  { manual: "fbref", topic: "Analog Control", level: "expert",
+    front: "What is the Splitter function block designed to do?",
+    back: "It splits one controller output to two downstream blocks and is designed to combine the limit information from those two downstream blocks into limits passed back to the upstream block. It supports mode control and signal status propagation, with no standard alarms." },
+
+  /* ============================================================
+   * PID FUNCTION BLOCK
+   * ============================================================ */
+  { manual: "pid", topic: "PID", level: "beginner",
+    front: "What control does the PID function block provide?",
+    back: "Proportional (P) + Integral (I) + Derivative (D) control. It combines the logic to perform analog input channel processing, PID control (with optional nonlinear control), and analog output channel processing. It can run in the DeltaV controller or execute in a Fieldbus device." },
+
+  { manual: "pid", topic: "PID", level: "beginner",
+    front: "Besides the compensating algorithm, name capabilities the PID block adds for practical control.",
+    back: "Running control in manual, anti-reset windup, output limits, bumpless manual-to-automatic transfers, and the ability to implement cascade and feedforward control. It also supports mode control, signal scaling and limiting, override tracking, alarm limit detection, signal status propagation, and simulation." },
+
+  { manual: "pid", topic: "PID", level: "intermediate",
+    front: "What two PID equation forms does the block support, and what do both support?",
+    back: "The Standard form and the Series form. Both are discrete implementations and both support external reset and feedforward." },
+
+  { manual: "pid", topic: "PID", level: "expert",
+    front: "In the PID equation, what do STRUCTURE, BETA, and GAMMA determine?",
+    back: "STRUCTURE together with BETA determines P(s) — the variable to which proportional action is applied (BETA sets the weighting of proportional action on a setpoint change). STRUCTURE together with GAMMA determines D(s) — the variable to which derivative action is applied (GAMMA sets the weighting of derivative action on a setpoint change)." },
+
+  { manual: "pid", topic: "PID", level: "expert",
+    front: "In the PID equation, what are Tr, Td, and L(s)?",
+    back: "Tr = reset time (parameter RESET) in seconds. Td = derivative time (parameter RATE) in seconds. L(s) = the external reset input, taken from either BKCAL_IN or OUT." },
+
+  { manual: "pid", topic: "PID", level: "expert",
+    front: "What is KNL (nonlinear gain) in the PID block, and where is it applied?",
+    back: "KNL is a nonlinear gain applied to the P + I terms but NOT to the D term. Nonlinear action is activated in FRSIPID_OPTS by selecting Use_Nonlinear_Gain_Modification (supporting error-squared and notched-gain control)." },
+
+  { manual: "pid", topic: "PID", level: "expert",
+    front: "Why must the PID GAIN parameter be scaled, and what is GAINa?",
+    back: "Because DeltaV works in engineering units, the GAIN parameter must be scaled to preserve the meaning of the normalized gain. GAINa is the normalized gain obtained after scaling GAIN from PV range to OUT range." },
+
+  { manual: "pid", topic: "PID", level: "intermediate",
+    front: "What is the sign convention for direct vs reverse acting PID, and what parameter sets it?",
+    back: "In the equation the ± term is + for reverse acting and − for direct acting. Direct_Acting is selected in CONTROL_OPTS. E(s) is the error (SP − PV)." },
+
+  { manual: "pid", topic: "PID", level: "beginner",
+    front: "How does an operator interact with a PID controller in DeltaV?",
+    back: "Through a controller 'faceplate' — the DeltaV controller faceplate that shows PV, SP, OUT, and mode, allowing the operator to change mode, setpoint, and output." },
+
+  { manual: "fbref", topic: "PID", level: "intermediate",
+    front: "What modes does the PID function block support?",
+    back: "Out of Service (OOS), Initialization Manual (IMan), Local Override (LO), Manual (Man), Automatic (Auto), Cascade (Cas), Remote Cascade (RCas), and Remote Out (ROut)." },
+
+  { manual: "fbref", topic: "PID", level: "expert",
+    front: "What two anti-windup / reset methods can the PID block use?",
+    back: "A selection between clamped integral action and dynamic reset limiting (external-reset feedback). The reset component is implemented with a positive-feedback network, which enables external reset and prevents reset windup when the output is limited or the cascade is open." },
+
+  { manual: "fbref", topic: "PID", level: "expert",
+    front: "What is BKCAL communication used for with the PID block?",
+    back: "BKCAL (back calculation) communication passes the downstream block's output and limit status back to the PID's BKCAL_IN so the PID can initialize its reset, provide bumpless transfers, and prevent windup when the downstream path is limited or open (the Advanced Topics - BKCAL Communications subject)." },
+
+  /* ============================================================
+   * MATH BLOCKS
+   * ============================================================ */
+  { manual: "fb2004", topic: "Math Blocks", level: "beginner",
+    front: "What does the Absolute Value (ABS) function block do?",
+    back: "It provides the absolute value of an integer or floating-point input value." },
+
+  { manual: "fb2004", topic: "Math Blocks", level: "beginner",
+    front: "What does the Add function block do, and how many inputs can it take?",
+    back: "It sums multiple inputs (e.g., to compute a total). The number of inputs is extensible — the default is two inputs and you can add more (up to 16)." },
+
+  { manual: "fbref", topic: "Math Blocks", level: "expert",
+    front: "What does the Arithmetic function block provide?",
+    back: "It provides range extension and compensation for a primary input through nine arithmetic types, letting you configure a range-extension/compensation function (e.g., flow compensation)." },
+
+  { manual: "fbref", topic: "Math Blocks", level: "intermediate",
+    front: "What does the Comparator function block do?",
+    back: "It takes the DISC_VAL input and performs a compare operation against COMP_VAL1 (and COMP_VAL2), producing discrete outputs based on the comparison result." },
+
+  { manual: "fbref", topic: "Math Blocks", level: "beginner",
+    front: "What is the Divide function block useful for?",
+    back: "Conversion calculations — it divides one input by another." },
+
+  { manual: "fbref", topic: "Math Blocks", level: "intermediate",
+    front: "What is the Integrator function block useful for?",
+    back: "Calculating total flow, total mass, or volume over time by integrating a rate input; it can also be used for totalizing applications." },
+
+  { manual: "fbref", topic: "Math Blocks", level: "beginner",
+    front: "What does the Multiply function block do?",
+    back: "It multiplies all input signals connected to the block and places the result at the output. The number of inputs is extensible (default two)." },
+
+  { manual: "fb2004", topic: "Math Blocks", level: "beginner",
+    front: "What does the Subtract function block do?",
+    back: "It is a mathematical operator that subtracts one input from another, often used with other Math function blocks." },
+
+  /* ============================================================
+   * TIMER / COUNTER BLOCKS
+   * ============================================================ */
+  { manual: "fbref", topic: "Timer/Counter", level: "intermediate",
+    front: "Does the Counter function block have modes or alarms?",
+    back: "No. The Counter block supports signal status propagation but has no modes or alarm detection. It counts discrete transitions/events." },
+
+  { manual: "fbref", topic: "Timer/Counter", level: "intermediate",
+    front: "What does the Date Time Event (DTE) function block do?",
+    back: "It generates events based on Absolute Time (local time of day). Multiple DTE blocks can be used to schedule several time-based events." },
+
+  { manual: "fbref", topic: "Timer/Counter", level: "intermediate",
+    front: "What does the Off-Delay Timer (OFFD) function block do?",
+    back: "It delays the transfer of a False (0) discrete input to the output by a specified time. It immediately transfers a True input to the output, but holds the output True for the delay period after the input goes False." },
+
+  { manual: "fbref", topic: "Timer/Counter", level: "intermediate",
+    front: "What does the On-Delay Timer (OND) function block do?",
+    back: "It delays the transfer of a True (1) discrete input to the output by a specified time. It immediately transfers a False input to OUT_D, but waits the delay before setting the output True." },
+
+  { manual: "fbref", topic: "Timer/Counter", level: "intermediate",
+    front: "What does the Retentive Timer (RET) function block do?",
+    back: "It generates a True (1) discrete output after the input has been True for a cumulative (retained) time, remembering accumulated time across input interruptions until reset." },
+
+  { manual: "fb2004", topic: "Timer/Counter", level: "intermediate",
+    front: "What does the Timed Pulse function block do?",
+    back: "It sets the output True for a specified time. For example, you can use it to run a motor for a fixed duration." },
+
+  /* ============================================================
+   * LOGICAL BLOCKS
+   * ============================================================ */
+  { manual: "fbref", topic: "Logical", level: "beginner",
+    front: "What does the And function block do?",
+    back: "It generates a discrete output based on the logical AND of two to sixteen discrete inputs (extensible), used to determine if all selected inputs are True." },
+
+  { manual: "fbref", topic: "Logical", level: "beginner",
+    front: "What does the Or function block do?",
+    back: "It generates a discrete output based on the logical OR of two to sixteen discrete inputs (extensible), True when any selected input is True." },
+
+  { manual: "fbref", topic: "Logical", level: "beginner",
+    front: "What does the Not function block do?",
+    back: "It generates an output that is the logical NOT of its input — when the input is False, the output is True, and vice versa." },
+
+  { manual: "fbref", topic: "Logical", level: "intermediate",
+    front: "What is the Boolean Fan Input function block useful for?",
+    back: "It is useful to detect and trap one or more discrete inputs as they transition to a target state. Its number of inputs is extensible (default two)." },
+
+  { manual: "fbref", topic: "Logical", level: "intermediate",
+    front: "What does the Boolean Fan Output function block do?",
+    back: "It distributes one input to multiple discrete outputs; the statuses of the block outputs (OUT_D) are set equal to the status of the block input (IN_INT). Its number of outputs is extensible." },
+
+  { manual: "fbref", topic: "Logical", level: "intermediate",
+    front: "What does the Multiplexer function block do?",
+    back: "It selects one input out of a number of inputs; the input is chosen by operator action or by a selector signal." },
+
+  { manual: "fbref", topic: "Logical", level: "intermediate",
+    front: "What is the Negative Edge Trigger function block used for?",
+    back: "To trigger other logical events based on the falling transition (True-to-False) of a discrete signal." },
+
+  { manual: "fbref", topic: "Logical", level: "intermediate",
+    front: "What is the Positive Edge Trigger function block used for?",
+    back: "To trigger other logical events based on the rising transition (False-to-True) of a discrete signal." },
+
+  { manual: "fbref", topic: "Logical", level: "intermediate",
+    front: "What does the Transfer function block do?",
+    back: "It selects one of two inputs based on the SELECTOR parameter value, passing the chosen input to the output." },
+
+  /* ============================================================
+   * ENERGY / STEAM METERING BLOCKS
+   * ============================================================ */
+  { manual: "fbref", topic: "Energy Metering", level: "expert",
+    front: "What does the ISE steam block calculate?",
+    back: "The ISE block calculates the final enthalpy for isentropic expansion of steam to a given pressure for given initial conditions." },
+
+  { manual: "fbref", topic: "Energy Metering", level: "expert",
+    front: "What does the SST steam block calculate?",
+    back: "SST calculates steam enthalpy, entropy, specific volume, and pressure for saturation conditions." },
+
+  { manual: "fbref", topic: "Energy Metering", level: "expert",
+    front: "What does the TSS steam block calculate?",
+    back: "TSS calculates the steam temperature at saturation for a given steam pressure." },
+
+  { manual: "fbref", topic: "Energy Metering", level: "expert",
+    front: "What does the SDR steam block calculate?",
+    back: "SDR calculates the square root of the ratio of steam density to the density of steam corresponding to reference conditions (used in flow compensation)." },
+
+  { manual: "fbref", topic: "Energy Metering", level: "expert",
+    front: "What does the STM steam block calculate?",
+    back: "STM calculates steam enthalpy, entropy, and specific volume for a given gauge pressure and temperature." },
+
+  { manual: "fbref", topic: "Energy Metering", level: "expert",
+    front: "What do the WTH and WTS water blocks calculate?",
+    back: "WTH calculates the enthalpy of water for a specified temperature (at saturation conditions); WTS calculates the entropy of water for a specified temperature (at saturation conditions)." },
+
+  /* ============================================================
+   * ADVANCED CONTROL BLOCKS
+   * ============================================================ */
+  { manual: "fbref", topic: "Advanced Control", level: "expert",
+    front: "What is the Fuzzy Logic Control function block designed for?",
+    back: "For situations where you need less oscillation and improved control response; it is normally set up by Tune. It supports OOS, IMan, LO, Man, Auto, Cas, RCas, and ROut modes." },
+
+  { manual: "fbref", topic: "Advanced Control", level: "expert",
+    front: "What is the MPC (Model Predictive Control) function block?",
+    back: "It is the basis of implementing multivariable control in a DeltaV system. Its execution rate is limited to one second or slower, and it is not supported in composites." },
+
+  { manual: "fbref", topic: "Advanced Control", level: "expert",
+    front: "What is the MPC Process Simulator block for?",
+    back: "It is designed to be used with the MPC function block, providing a simulated process model to test and commission MPC control." },
+
+  { manual: "fbref", topic: "Advanced Control", level: "expert",
+    front: "How does MPCPro differ from MPC, and what modes does it add?",
+    back: "MPCPro is the professional MPC block; like MPC its execution rate is limited to one second or slower and it is not supported in composites, but MPCPro adds Cascade mode (supporting OOS, IMan, Man, Auto, Local Override, and Cascade)." },
+
+  { manual: "fbref", topic: "Advanced Control", level: "expert",
+    front: "What is the Neural Network (NN) function block?",
+    back: "It is the basis of implementing neural networks in a DeltaV system (for example, inferential/soft-sensor predictions). It is not supported in composites." },
+
+  { manual: "fbref", topic: "Advanced Control", level: "expert",
+    front: "What do the AVTR and DVTR function blocks provide?",
+    back: "AVTR provides an analog voter function and DVTR provides a discrete voter function. A voter block monitors a number of input values and votes on them (e.g., for safety/redundant measurement logic)." },
+
+  { manual: "fbref", topic: "Advanced Control", level: "expert",
+    front: "What is the Diagnostic function block used for?",
+    back: "It provides a method to monitor device alerts from non-fieldbus assets; you wire device information into it within modules to surface diagnostics." },
+
+  /* ============================================================
+   * IMPLEMENTATION I — SYSTEM ARCHITECTURE
+   * ============================================================ */
+  { manual: "impl", topic: "Architecture", level: "beginner",
+    front: "What are the three main node types on a basic DeltaV control network?",
+    back: "A Workstation, a Controller, and the network switches (Primary and Secondary switches). The controller provides communication and control between field devices and the other nodes on the control network." },
+
+  { manual: "impl", topic: "Architecture", level: "intermediate",
+    front: "List the key DeltaV system capacity maximums.",
+    back: "120 Nodes, 100 Controllers (simplex or redundant pairs), 65 Workstations, 30,000 Device Signal Tags (DSTs), and 25,000 SCADA tags." },
+
+  { manual: "impl", topic: "Architecture", level: "intermediate",
+    front: "What are the per-controller DST limits for MQ/SQ, MX/SX, SZ, and PK controllers?",
+    back: "750 DSTs max per MQ/SQ, 1500 per MX/SX, 1536 per SZ, and 1500 per PK controller. (The PK controller comes in sizes 100, 300, and 750.)" },
+
+  { manual: "impl", topic: "Architecture", level: "intermediate",
+    front: "Compare the M-series MQ and MX controllers.",
+    back: "MQ: 48 MB user memory, 750 DSTs. MX: 96 MB user memory, 1500 DSTs. M-series controllers provide communication and control between field devices and the other network nodes." },
+
+  { manual: "impl", topic: "Architecture", level: "intermediate",
+    front: "Compare the S-series SQ, SX, and SZ controllers.",
+    back: "SQ: 48 MB user memory. SX: 96 MB user memory. SZ: designed for DeltaV SIS with Electronic Marshalling. S-series hardware (silver, snap-in cards) was introduced with DeltaV v11.3." },
+
+  { manual: "impl", topic: "Architecture", level: "expert",
+    front: "What makes the DeltaV PK Controller distinctive?",
+    back: "It is a single integrated controller that supports any DeltaV I/O type and executes control modules as fast as 25 ms. Local I/O support includes M-series I/O (except M-series IS I/O), S-series I/O, CHARMs I/O, Wireless I/O, M-series Zone 2 Remote I/O, and DeltaV SIS." },
+
+  { manual: "impl", topic: "I/O Hardware", level: "beginner",
+    front: "How many local I/O cards does a DeltaV controller support?",
+    back: "Up to 64 local I/O cards. M-series hardware uses an 8-Wide I/O Interface Carrier with I/O terminal blocks, a controller, and a system power supply." },
+
+  { manual: "impl", topic: "I/O Hardware", level: "intermediate",
+    front: "Which bussed I/O card types does M-series support, and which can be redundant?",
+    back: "FOUNDATION Fieldbus Interface*, DeviceNet, Profibus DP*, Actuator Sensor Interface (AS-i), and Serial Interface*. Those marked * (FF, Profibus DP, Serial) can be used for redundant I/O applications." },
+
+  { manual: "impl", topic: "I/O Hardware", level: "intermediate",
+    front: "What is Electronic Marshalling, and what hardware does it use?",
+    back: "Electronic Marshalling uses CHARMs (CHARacterization Modules) to terminate field wiring and route any signal type to any controller electronically. Hardware includes the CHARM I/O Card (CIOC) and carrier, CHARMs, CHARM Baseplates, and CHARM terminal blocks. Max 16 CIOCs/WIOCs per controller." },
+
+  { manual: "impl", topic: "I/O Hardware", level: "expert",
+    front: "What is a CHARM, and when were CHARM classes introduced?",
+    back: "A CHARM (CHARacterization Module) is a single-channel module that characterizes one field signal (analog, discrete, or IS). A variety of analog, discrete, and IS CHARMs were introduced in DeltaV v11.3.1." },
+
+  { manual: "impl", topic: "I/O Hardware", level: "expert",
+    front: "What is Distributed CHARMs and how is it structured?",
+    back: "Distributed CHARMs places CHARMs closer to field devices, useful where equipment is lightly instrumented. Hardware includes the CHARM I/O Gateway (connected to a CIOC or CHARM baseplate) and the CHARM I/O Block (rugged field housing). It supports 8 drops of 12 CHARMs each." },
+
+  { manual: "impl", topic: "I/O Hardware", level: "expert",
+    front: "What does the DeltaV S-series Wireless I/O Card (WIOC) do, and what are its limits?",
+    back: "The WIOC provides redundant communications between controllers and Smart Wireless Field Links, which talk to wireless field devices via the self-organizing network. Limits: 100 devices per WIOC, and 16 CIOCs/WIOCs per controller." },
+
+  { manual: "impl", topic: "Applications", level: "beginner",
+    front: "What is DeltaV Explorer used for?",
+    back: "DeltaV Explorer is used to view and edit the system's configuration. It provides pull-down menus, access buttons to other DeltaV programs, and +/- symbols to expand/collapse items. Access via All apps → DeltaV Engineering → DeltaV Explorer." },
+
+  { manual: "impl", topic: "Applications", level: "beginner",
+    front: "What is DeltaV Control Studio used for?",
+    back: "Control Studio is used to define and modify control modules. Access via All apps → DeltaV Engineering → Control Studio." },
+
+  { manual: "impl", topic: "Applications", level: "beginner",
+    front: "What is DeltaV Operate (Configure) used for?",
+    back: "DeltaV Operate (Configure) is used to create and edit DeltaV graphics (operator displays). DeltaV Operate (Run) is the runtime operator environment." },
+
+  { manual: "impl", topic: "Applications", level: "intermediate",
+    front: "What is DeltaV Diagnostics used for and how is it accessed?",
+    back: "DeltaV Diagnostics displays system diagnostic information about nodes, controllers, and I/O. Access via All apps → DeltaV Operator → Diagnostics." },
+
+  { manual: "impl", topic: "Plant Areas", level: "intermediate",
+    front: "What are the characteristics of a Plant Area?",
+    back: "A Plant Area contains control modules, defines user privilege boundaries, and defines workstation alarm boundaries." },
+
+  { manual: "impl", topic: "Plant Areas", level: "expert",
+    front: "What two conditions must be met to control a plant area from a specific workstation?",
+    back: "1) The user must have 'operate' privilege on that plant area. 2) The area must be assigned to the workstation's Alarms and Events subsystem. Workstations can be restricted to control only the areas assigned to their A&E subsystem." },
+
+  { manual: "impl", topic: "DSTs", level: "beginner",
+    front: "What is a Device Signal Tag (DST)?",
+    back: "A DST is a named item that attaches an I/O channel to a control module. It is typically named to match the instrument name and is used to define I/O properties (e.g., Analog In vs. HART; DO Latching, Momentary, or Continuous Pulse)." },
+
+  { manual: "impl", topic: "DSTs", level: "intermediate",
+    front: "When does a device consume one DST license?",
+    back: "A device uses one DST license when it is (1) wired into an I/O channel, (2) used in a function block in a control module, and (3) assigned to a controller. Start with the P&ID and count the number and type of instruments to determine required DST licensing." },
+
+  { manual: "impl", topic: "DSTs", level: "intermediate",
+    front: "How are channels/DSTs configured in DeltaV Explorer?",
+    back: "Configure channels from DeltaV Explorer: CTLR → I/O → Card # (e.g., C01) → Channel # (e.g., CH01) → Properties. DST licensing is based on the number and type of I/O: Analog Output, Analog Input, Discrete Output, Discrete Input." },
+
+  { manual: "impl", topic: "Named Sets", level: "intermediate",
+    front: "What is a Named Set in DeltaV?",
+    back: "A Named Set is a collection of strings called Named States with equivalent integer values from 0 to 255. You can add up to 255 names to a named set. Access via DeltaV Explorer → Setup → Named Sets. Example: Passive = 0, Active1 = 1." },
+
+  { manual: "impl", topic: "Download", level: "intermediate",
+    front: "What does a controller download transfer?",
+    back: "A download transfers controller configuration, setup data, and cold restart memory from the workstation to the controller. Download subsets include configuration data not tied to a specific module/card — named sets, parameter security, cold restart information, redundancy information, and alarm data." },
+
+  { manual: "impl", topic: "Cold Restart", level: "intermediate",
+    front: "What does Cold Restart ensure, and where is it enabled?",
+    back: "Cold Restart ensures that after a power failure the controller restarts automatically — without manual intervention and without any other device present on the network — by downloading itself from its cold restart memory. Enable it via CTLR → Properties → Controller tab." },
+
+  { manual: "impl", topic: "Cold Restart", level: "expert",
+    front: "What are the Cold Restart options?",
+    back: "Always Disabled; Always Enabled (maximum time); and Enabled Within A Time Limit — configurable in Days (0-30), Hours (0-23), and Minutes (0-59). Commissioning and downloading run automatically if power returns within the cold restart time." },
+
+  { manual: "impl", topic: "Alarms", level: "intermediate",
+    front: "What does the Alarm Priorities Properties dialog define?",
+    back: "It defines the alarm Priority's Description, Value, Auto Acknowledge New Alarms, Auto Acknowledge When Inactive, Alarm Banner shows (Not Hidden / Module / Unit-Equipment Module), Wave File, and Suppressed sound for acknowledged alarms." },
+
+  { manual: "impl", topic: "Alarms", level: "expert",
+    front: "What is a Conditional Alarm and how is it created in the course?",
+    back: "A conditional alarm activates an alarm only under a defined condition (e.g., alert if temperature goes above 80°F so corrective action can be taken). The workshop generates a Difference Report and then configures the conditional alarm." },
+
+  { manual: "impl", topic: "Graphics", level: "beginner",
+    front: "What is a datalink in a DeltaV Operate picture, and how is one added?",
+    back: "A datalink displays/writes a live parameter value on a graphic. Add one by clicking the Datalink Stamper button in DeltaV Operate (Configure). 'Confirm' is used to confirm the data write when an operator changes a value." },
+
+  { manual: "impl", topic: "Graphics", level: "intermediate",
+    front: "What is a Dynamo?",
+    back: "A Dynamo is a group of objects that represents a device or piece of equipment (e.g., a valve, motor, or controller faceplate) as a reusable graphic element placed on operator displays." },
+
+  { manual: "impl", topic: "Graphics", level: "intermediate",
+    front: "What does the Chart Builder provide, and which parameters do Theme/High Performance dynamos support natively?",
+    back: "The Chart Builder lets a user dynamically build a chart with 6 trends. Theme and High Performance dynamos natively support adding three default parameters — PV, SP, and OUT — to the Chart Builder." },
+
+  { manual: "impl", topic: "Regulatory Control", level: "intermediate",
+    front: "What does the mode of a PID block determine?",
+    back: "Mode determines where the PID block gets its setpoint (SP) and how it determines its output (OUT). DeltaV function block modes include AUTO, CAS, MAN, RCAS, ROUT, IMAN, OOS, and LO." },
+
+  { manual: "impl", topic: "Cascade Control", level: "expert",
+    front: "What are the numeric target/actual values for the DeltaV modes (important for Fieldbus writes)?",
+    back: "OOS = 1 (T/A). LO = 4 (Actual only). MAN = 8 (T/A). AUTO = 16 (T/A). IMAN = 2 (Actual). CAS = 48 Target / 32 Actual. RCAS = 80 Target / 64 Actual. ROUT = 144 Target / 128 Actual. Always write the numeric value, not the word, to Fieldbus devices." },
+
+  { manual: "impl", topic: "SFC", level: "beginner",
+    front: "What are Sequential Function Charts (SFCs) used for, and what do they consist of?",
+    back: "SFCs control time/event sequences. They consist of Steps (execute actions), Transitions (determine when to proceed based on an expression evaluating TRUE), and Terminations (a special symbol marking the end of a sequence, which may contain an expression)." },
+
+  { manual: "impl", topic: "SFC", level: "intermediate",
+    front: "What are the three types of SFC Step Actions?",
+    back: "Assignment (assigns an expression's result to a destination — the most common), Boolean (references a module-level Boolean parameter, e.g., set it TRUE), and Non-Boolean (runs a Function Block embedded inside the SFC logic)." },
+
+  { manual: "impl", topic: "SFC", level: "expert",
+    front: "What are the SFC Step Action Qualifiers (Stored vs Non-Stored)?",
+    back: "Non-Stored: N (Non-Stored), R (Reset), L (Time Limited), D (Delayed), P (Pulse). Stored: S (Set/Stored), SD (Stored and Delayed), DS (Delayed and Stored), SL (Stored and Time Limited)." },
+
+  { manual: "impl", topic: "Equipment Modules", level: "intermediate",
+    front: "What is an Equipment Module (EM)?",
+    back: "An EM typically provides supervisory control for a collection of control modules, coordinating the operation of multiple modules that must work together to control related equipment. EMs contain one or more modules and are typically controlled using states or commands." },
+
+  { manual: "impl", topic: "Equipment Modules", level: "expert",
+    front: "How many EM algorithm types are there, and which two are most common?",
+    back: "Seven algorithm types can define EM logic. The most commonly used are the State-Driven and Command-Driven algorithms. The others are Function Block Diagram, Sequential Function Chart, Phase, Phase with command-driven run logic, and Phase with state-driven run logic." },
+
+  { manual: "impl", topic: "Equipment Modules", level: "expert",
+    front: "Contrast Command-Driven and State-Driven EM algorithms.",
+    back: "Command-Driven: used when multiple steps/commands are needed to supervise control modules with timing relationships; contains SFC code based on commands. State-Driven: used when a single step/value manipulates the control modules (simple, no complex timing, e.g., changing setpoints on a group of valves/motors); contains SFC code based on states. Both associate commands/states with the A_COMMAND parameter (a Named Set), which must include a mandatory entry value 255 = undefined/idle." },
+
+  { manual: "impl", topic: "Equipment Modules", level: "expert",
+    front: "What is a Phase Algorithm in an Equipment Module?",
+    back: "A Phase Algorithm contains an S88 state-transition diagram made up of embedded composites that hold the logic governing transitions between the states of a phase. Variants replace the Run-logic composite with command-driven or state-driven logic." },
+
+  { manual: "impl", topic: "Continuous Historian", level: "intermediate",
+    front: "What does the DeltaV Continuous Historian do?",
+    back: "It collects user-specified parameters for long-term storage. Components: History Collection (define module/node parameters to monitor and store), Continuous History Subsystems (each workstation has one; monitors modules for history on a plant-area basis), and Process History View (displays real-time and historical data)." },
+
+  { manual: "impl", topic: "Continuous Historian", level: "expert",
+    front: "What is an embedded trend, and how is it added/configured?",
+    back: "An embedded trend object is placed in a graphic display using the Embedded Trend Control button in the DeltaV Toolbox. Double-click it in Configure mode to configure the chart; right-click it in Run mode for many of the same options as Process History View." },
+
+  { manual: "impl", topic: "Motor Control", level: "intermediate",
+    front: "In the course, how is a motor represented and what block type is typically used?",
+    back: "Motors (e.g., MTR-102, MTR-203) are built as control modules using a Device Control (DC) block, whose setpoint names come from a Named Set (e.g., mtr2-sp with states like Passive/Active). The DC block's SP_D properties let you browse available named sets." }
+];
+
+// Expose for the app
+if (typeof window !== "undefined") { window.DV_MANUALS = DV_MANUALS; window.DV_CARDS = DV_CARDS; }
