@@ -1,6 +1,8 @@
 # DV Trainer
 
-A dark-mode study-card web app for learning **Emerson DeltaV** function blocks and system implementation. Pick a difficulty level and a set of source material, then drill flashcards or run a self-test. Ships with **~1,350 study cards** spanning ~60 function blocks (every parameter), modes/cascade/status behavior, PID, DeltaV implementation, and **DeltaV Live** (with Live-vs-Operate comparisons).
+A dark-mode study-card web app for learning **Emerson DeltaV** function blocks and system implementation. Pick a difficulty level and a set of source material, then drill flashcards or run a self-test. Ships with **~3,000 study cards** spanning ~80 function blocks (every parameter and section), modes/cascade/status behavior, PID, DeltaV implementation, and **DeltaV Live**.
+
+> Note: Image cards (schematic diagrams and manual screenshots) and their data files are generated locally from the manuals and are **excluded from this repository** for copyright reasons — they ship in the local app and the packaged desktop build only.
 
 > All study-card content is **derived study material** written from a set of DeltaV manuals. The original manuals themselves are copyrighted Emerson training materials and are **not** included in this repository.
 
@@ -9,6 +11,7 @@ A dark-mode study-card web app for learning **Emerson DeltaV** function blocks a
 - **Three levels** — Beginner, Intermediate, Expert.
 - **Material scopes** — Function Block manuals, the Implementation course (Operate + DeltaV Live), or All manuals.
 - **Deep parameter coverage** — a card for every parameter of every documented function block, plus “coding with parameters” (fields, references, named sets, option bitstrings, expressions).
+- **Visual recognition (local build)** — identify function blocks from their schematic diagrams and recognize DeltaV Operate/Live screens and hardware.
 - **Two study modes** — Flashcards (flip to reveal) and Self-Test (rate recall: Again / Hard / Good / Easy).
 - **Progress tracking** — mastered cards are remembered per level/scope in `localStorage`.
 - **Filter & search** — narrow the deck by keyword or topic.

@@ -16,3 +16,9 @@ icons/
 # Never commit source manuals or their extracted text (copyrighted)
 *.pdf
 extracted/
+
+# Local-only: verbatim schematic figures extracted from the copyrighted manual
+# (kept in the local app and the packaged .exe, but not redistributed publicly)
+images/
+data/cards_schematics.js
+data/cards_manual_images.js

@@ -230,6 +230,8 @@
       $("#backText").textContent = "";
       $("#frontTags").innerHTML = "";
       $("#backTags").innerHTML = "";
+      $("#frontImg").classList.remove("show");
+      $("#backImg").classList.remove("show");
       $("#progressText").textContent = "0 / 0";
       $("#progressFill").style.width = "0%";
       $("#quizControls").classList.remove("show");
@@ -244,6 +246,16 @@
     $("#backTags").innerHTML = tagHTML(card);
     $("#frontText").textContent = card.front;
     $("#backText").textContent = card.back;
+
+    // Optional schematic image (imageSide: 'front' | 'back' | 'both')
+    const frontImg = $("#frontImg"), backImg = $("#backImg");
+    const side = card.imageSide || (card.image ? "back" : "");
+    const wantFront = card.image && (side === "front" || side === "both");
+    const wantBack = card.image && (side === "back" || side === "both");
+    if (wantFront) { frontImg.src = card.image; frontImg.classList.add("show"); }
+    else { frontImg.classList.remove("show"); frontImg.removeAttribute("src"); }
+    if (wantBack) { backImg.src = card.image; backImg.classList.add("show"); }
+    else { backImg.classList.remove("show"); backImg.removeAttribute("src"); }
 
     $("#deckCount").textContent = `${total} card${total === 1 ? "" : "s"} in deck`;
     $("#progressText").textContent = `${state.index + 1} / ${total}`;
