@@ -42,15 +42,19 @@ Edit `data/cards.js`:
 
 ```js
 // Register a manual (its scope decides the home-screen grouping)
-DV_MANUALS.mykey = { name: "My Manual", short: "Mine", scope: "function-block" };
+DV_MANUALS.mykey = {
+  name: "My Manual",
+  short: "Mine",
+  scope: "function-block",
+};
 
 // Add cards
 DV_CARDS.push({
   manual: "mykey",
-  topic:  "My Topic",
-  level:  "beginner",      // beginner | intermediate | expert
-  front:  "Question?",
-  back:   "Answer."
+  topic: "My Topic",
+  level: "beginner", // beginner | intermediate | expert
+  front: "Question?",
+  back: "Answer.",
 });
 ```
 
